@@ -564,14 +564,14 @@ if(!standalone&&(isIOS||!isMobile))$('bInst').hidden=false;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;if(!standalone)$('bInst').hidden=false});
 addEventListener('appinstalled',()=>{$('bInst').hidden=true;if(isMobile)tip('설치했어요. 홈 화면에서 바로 열 수 있어요');
   else setTimeout(()=>alert("설치했어요!\n\n바탕화면에 아이콘이 안 보이면\n· 엣지 : 주소창에 edge://apps → 앱 오른쪽 '…' → '바탕 화면 바로 가기 만들기'\n· 크롬 : 주소창에 chrome://apps → 아이콘 오른쪽 클릭 → '바로가기 만들기'\n· 또는 시작 메뉴에서 아이콘을 바탕화면으로 끌어다 놓기"),400)});
-// PC에서 설치 창을 못 띄우면 바로가기(.url) 파일을 내려받게 함
-function urlShortcut(){const name=(document.querySelector('h1')||{}).textContent||'땅 측량 길잡이',url=location.origin+location.pathname;
-  const b=new Blob(['[InternetShortcut]\r\nURL='+url+'\r\nIconIndex=0\r\n'],{type:'application/octet-stream'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(b);a.download=name+'.url';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+// PC에서 설치 창이 안 뜨면(이미 설치했거나 지원 안 하는 브라우저) 바탕화면 아이콘 만드는 법 안내
 $('bInst').onclick=async()=>{if(INST){if(!isMobile)tip("설치 뒤 뜨는 창에서 '바탕 화면 바로 가기 만들기'에 꼭 체크하세요");INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
   if(isIOS)return alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.");
   if(isMobile)return alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.");
-  urlShortcut();alert("바로가기 파일을 받았어요. 다운로드 폴더의 파일을 바탕화면으로 옮기면 돼요.\n\n엣지·크롬이라면 주소창 오른쪽의 '앱 설치' 아이콘으로 설치하면 바탕화면과 시작 메뉴에 바로 생겨요.")};
+  const edge=/Edg\//.test(navigator.userAgent),how=edge
+    ?"① 주소창에 edge://apps 를 입력해 들어가요\n② '내땅 보이소'가 있으면 오른쪽 '…' → '바탕 화면 바로 가기 만들기'\n③ 없으면 이 화면 오른쪽 위 '…' → '앱' → '이 사이트를 앱으로 설치' (설치 창에서 '바탕 화면 바로 가기'에 체크)"
+    :"① 주소창에 chrome://apps 를 입력해 들어가요\n② '내땅 보이소' 아이콘 오른쪽 클릭 → '바로가기 만들기' → '바탕화면'에 체크\n③ 없으면 이 화면 오른쪽 위 '⋮' → '전송, 저장, 공유' → '바로가기 만들기' ('창으로 열기' 체크)";
+  alert("바탕화면에 아이콘 만들기\n\n"+how+"\n\n가장 쉬운 방법 : 주소창 맨 왼쪽 자물쇠(🔒) 아이콘을 마우스로 잡고 바탕화면으로 끌어다 놓으세요.")};
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 // 오른쪽 안내 칸 접기·펴기 (PC)
 const setSide=off=>{document.body.classList.toggle('sideoff',off);const b=$('bSide');b.textContent=off?'‹':'›';b.setAttribute('aria-label',off?'오른쪽 안내 칸 펴기':'오른쪽 안내 칸 접기');
