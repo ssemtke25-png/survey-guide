@@ -559,19 +559,18 @@ $('bBig').onclick=()=>setBig(!document.body.classList.contains('bigtext'));try{i
 // 홈 화면에 추가 (안드로이드 : 설치 창 / 아이폰 : 안내)
 let INST=null;const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
 const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-$('bInst').textContent=isMobile?'📲 홈 화면에 추가':'🖥️ 바탕화면에 추가';
+$('bInst').textContent=isMobile?'📲 홈 화면에 추가':'⭐ 즐겨찾기';
 if(!standalone&&(isIOS||!isMobile))$('bInst').hidden=false;
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;if(!standalone)$('bInst').hidden=false});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();if(!isMobile)return;INST=e;if(!standalone)$('bInst').hidden=false});
 addEventListener('appinstalled',()=>{$('bInst').hidden=true;if(isMobile)tip('설치했어요. 홈 화면에서 바로 열 수 있어요');
   else setTimeout(()=>alert("설치했어요!\n\n바탕화면에 아이콘이 안 보이면\n· 엣지 : 주소창에 edge://apps → 앱 오른쪽 '…' → '바탕 화면 바로 가기 만들기'\n· 크롬 : 주소창에 chrome://apps → 아이콘 오른쪽 클릭 → '바로가기 만들기'\n· 또는 시작 메뉴에서 아이콘을 바탕화면으로 끌어다 놓기"),400)});
 // PC에서 설치 창이 안 뜨면(이미 설치했거나 지원 안 하는 브라우저) 바탕화면 아이콘 만드는 법 안내
-$('bInst').onclick=async()=>{if(INST){if(!isMobile)tip("설치 뒤 뜨는 창에서 '바탕 화면 바로 가기 만들기'에 꼭 체크하세요");INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
+$('bInst').onclick=async()=>{
+  if(!isMobile){const mac=/Mac/.test(navigator.platform||navigator.userAgent),k=mac?'⌘ + D':'Ctrl + D';
+    tip('키보드에서 '+k+' 를 누르면 즐겨찾기에 추가돼요');alert('키보드에서 '+k+' 를 누르면 즐겨찾기에 추가돼요.\n\n즐겨찾기 모음줄에 넣어 두면 언제든 한 번에 열 수 있어요.');return}
+  if(INST){INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
   if(isIOS)return alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.");
-  if(isMobile)return alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.");
-  const edge=/Edg\//.test(navigator.userAgent),how=edge
-    ?"① 주소창에 edge://apps 를 입력해 들어가요\n② '내땅 보이소'가 있으면 오른쪽 '…' → '바탕 화면 바로 가기 만들기'\n③ 없으면 이 화면 오른쪽 위 '…' → '앱' → '이 사이트를 앱으로 설치' (설치 창에서 '바탕 화면 바로 가기'에 체크)"
-    :"① 주소창에 chrome://apps 를 입력해 들어가요\n② '내땅 보이소' 아이콘 오른쪽 클릭 → '바로가기 만들기' → '바탕화면'에 체크\n③ 없으면 이 화면 오른쪽 위 '⋮' → '전송, 저장, 공유' → '바로가기 만들기' ('창으로 열기' 체크)";
-  alert("바탕화면에 아이콘 만들기\n\n"+how+"\n\n가장 쉬운 방법 : 주소창 맨 왼쪽 자물쇠(🔒) 아이콘을 마우스로 잡고 바탕화면으로 끌어다 놓으세요.")};
+  alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.")};
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 // 오른쪽 안내 칸 접기·펴기 (PC)
 const setSide=off=>{document.body.classList.toggle('sideoff',off);const b=$('bSide');b.textContent=off?'‹':'›';b.setAttribute('aria-label',off?'오른쪽 안내 칸 펴기':'오른쪽 안내 칸 접기');
@@ -858,13 +857,13 @@ $('spClr').onclick=()=>{if(SP.on&&!SP.lines.length){SP.clear();return}SP.clear()
 }
 let meDot=null;const showMe=(la,lo,z)=>{map.setView([la,lo],z);if(meDot)meDot.setLatLng([la,lo]);else meDot=L.circleMarker([la,lo],{radius:7,color:'#fff',weight:3,fillColor:'#1a73e8',fillOpacity:1,interactive:false}).addTo(map)};
 $('bMe').onclick=()=>{if(!navigator.geolocation)return tip('이 기기는 위치를 알 수 없어요');tip('내 위치를 찾는 중…');
-  navigator.geolocation.getCurrentPosition(p=>{showMe(p.coords.latitude,p.coords.longitude,18);tip('내 땅을 눌러 주세요')},()=>tip('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:10000})};
+  navigator.geolocation.getCurrentPosition(p=>{const ac=p.coords.accuracy;showMe(p.coords.latitude,p.coords.longitude,ac>1500?15:18);tip(ac>1500?'이 기기는 위치가 정확하지 않아요 (인터넷 회선 기준이라 엉뚱한 곳이 나올 수 있어요). 주소로 찾아 주세요':'내 땅을 눌러 주세요')},()=>tip('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:10000})};
 // 첫 화면 : 공유 링크 > 내 위치 > 마지막으로 본 곳 > 경북도청
 {const VK='sg_view';let moved=false;
  try{const v=JSON.parse(localStorage.getItem(VK)||'null');if(!PENDING&&v&&v.z)map.setView([v.la,v.lo],v.z);else if(!PENDING)map.setView([36.5759,128.5056],14)}catch(e){}
  map.on('moveend',()=>{const c=map.getCenter();try{localStorage.setItem(VK,JSON.stringify({la:+c.lat.toFixed(6),lo:+c.lng.toFixed(6),z:map.getZoom()}))}catch(e){}});
  map.once('dragstart zoomstart',()=>{moved=true});
- const go=()=>navigator.geolocation.getCurrentPosition(p=>{if(moved||PENDING||window.__picked)return;const{latitude:la,longitude:lo}=p.coords;
+ const go=()=>navigator.geolocation.getCurrentPosition(p=>{if(moved||PENDING||window.__picked)return;const{latitude:la,longitude:lo,accuracy:ac}=p.coords;if(!(ac<=1500))return;
    if(la<33||la>38.7||lo<124.5||lo>132)return;showMe(la,lo,17);tip('내 위치 근처예요. 내 땅을 눌러 주세요')},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:600000});
  if(!PENDING&&navigator.geolocation&&location.protocol==='https:'){
    if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state!=='denied')go()}).catch(go);else go()}}
