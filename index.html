@@ -324,7 +324,7 @@ function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d)}</td><td>${esc(x.why)
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
 const API_BLD=['getBuildingUse','getBuildingAge','getBuldInfoAttr','getBuildingInfoAttr'],API_MV=['getLandMoveAttr','getLandMovHistAttr','getLadMvmnHistAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
-async function tryNed(list,pnu,log){for(const op of list){try{const d=await ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
+async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
 async function extraInfo(p){const log=PROBE?[]:null;
   const [b,m]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log)]);
@@ -727,7 +727,7 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
   document.head.appendChild(s)})}
 // 국가중점데이터(NED) : 토지대장 면적·지목, 최신 개별공시지가
 // 브라우저에서 바로(fetch) 부르고, 막히면 JSONP로 다시 부름
-async function ned(path,params){
+window.__ned=(...a)=>ned(...a);async function ned(path,params){
   const q=new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',numOfRows:'50',pageNo:'1'},params));
   const url=`https://api.vworld.kr/ned/data/${path}?`;
   try{const r=await fetch(url+q);if(r.ok)return await r.json()}catch(e){}
