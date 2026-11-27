@@ -6,6 +6,11 @@
 <title>땅 측량 길잡이</title>
 <meta name="description" content="지도에서 내 땅을 누르면 어떤 측량이 필요한지, 예상 수수료와 신청 방법을 알려 드립니다.">
 <meta name="theme-color" content="#17203a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="땅 길잡이">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
@@ -31,6 +36,7 @@ h2{font-size:16px;margin:18px 0 8px}
 .search button,.fab{border:0;border-radius:12px;background:var(--ink);color:#fff;font-weight:700;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .fabs{position:absolute;z-index:500;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));display:grid;gap:8px}
 .fab{height:46px;padding:0 14px}
+.fab.ov{height:38px;font-size:13.5px}.fab.ov[aria-pressed=true]{background:var(--blue);color:#fff;border-color:var(--blue)}
 .fab.alt{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
 .tip{position:absolute;z-index:500;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:rgba(23,32,58,.92);color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;max-width:calc(100% - 150px)}
 .warn{border-left:4px solid var(--red);background:#fff4f4;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;margin:0 0 6px}.warn b{display:block;color:var(--red);font-size:14.5px;margin-bottom:2px}
@@ -64,6 +70,12 @@ h2{font-size:16px;margin:18px 0 8px}
 .spbar span{flex:1 1 100%}.spbar button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.spbar .save{background:var(--red)}.spbar .lite{background:var(--panel);color:var(--ink)}.spbar small{flex:1 1 100%;font-weight:400;color:var(--red);font-size:12px}
 .splabw{background:none;border:0}.splab{position:absolute;left:0;top:0;transform:translate(-50%,-50%);background:rgba(255,255,255,.92);border:1.5px solid #111;border-radius:8px;padding:2px 7px;font-size:13px;font-weight:700;white-space:nowrap}
 .sphandle{background:#fff;border:3px solid #111;border-radius:50%;box-sizing:border-box}
+.qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:3px;border-radius:50%;border:1.5px solid var(--blue);background:#fff;color:var(--blue);font-size:11.5px;font-weight:900;cursor:pointer;padding:0;vertical-align:1px;line-height:1}
+.gbub{position:fixed;z-index:4000;background:#17203a;color:#fff;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.25)}.gbub b{display:block;color:#ffd84d;margin-bottom:2px}
+.toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.tbtn{display:flex;gap:6px;flex-wrap:wrap}.tbtn button{border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.tbtn b{font-size:16px}.tbtn button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bigtext .side{zoom:1.2}.bigtext .gbub{font-size:16px}
+.parts small{color:var(--mut);font-size:11px}
+.splab small{font-weight:400;color:var(--mut)}
 .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:3px}.parts .pn{padding-left:10px;color:var(--mut);font-size:13px}
 .reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
 .reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
@@ -126,14 +138,16 @@ tr.sum td{font-weight:900}
     <div class="spbar" id="spbar" hidden><span id="spmsg"></span><button type="button" id="spEnd" class="save">선 끝내기</button><button type="button" id="spUndo" class="lite">한 점 취소</button><button type="button" id="spAdd">선 더 긋기</button><button type="button" id="spSave" class="save" hidden>저장</button><button type="button" id="spClr" class="lite">지우기</button><small>참고용 면적이에요. 실제 면적은 측량으로 정해져요.</small></div>
     <div class="tip" id="tip">지도를 확대해서 내 땅을 눌러 주세요</div>
     <div class="fabs">
+      <button class="fab alt ov" id="bUse" type="button" aria-pressed="false">용도지역</button>
+      <button class="fab alt ov" id="bPlan" type="button" aria-pressed="false">도시계획</button>
       <button class="fab alt" id="bLayer" type="button">위성</button>
       <button class="fab" id="bMe" type="button">내 위치</button>
     </div>
   </div>
   <div class="side">
-    <h1>땅 측량 길잡이</h1>
+    <div class="toprow"><h1>땅 측량 길잡이</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
     <p class="sub">지도에서 내 땅을 누르면 필요한 측량과 예상 수수료, 신청 방법을 알려 드려요.</p>
-    <div class="warn"><b>지도의 선은 참고용이에요</b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
+    <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
 
     <h2>1. 무슨 일로 측량하세요?</h2>
     <div class="kinds" id="kinds"></div>
@@ -148,7 +162,7 @@ tr.sum td{font-weight:900}
         <div class="vat" id="vat"></div>
       </div>
       <details><summary>계산 내역 보기</summary><table><tbody id="bd"></tbody></table></details>
-      <div class="note">2026년 지적측량수수료 고시 기준 예상 금액이에요. 실제 수수료는 접수할 때 확정되고, 경계점표지 값은 따로예요.</div>
+      <div class="note">2026년 지적측량수수료 고시 기준 예상 금액이에요. 실제 수수료는 접수할 때 확정되고, 경계점표지 <button type="button" class="qm" data-g="pyo" aria-label="경계점표지 설명">?</button> 값은 따로예요.</div>
     </div>
 
     <div class="acts">
@@ -220,16 +234,32 @@ const won=n=>n.toLocaleString('ko-KR')+'원';
 const DEF={kind:'bound',land:'토지',area:450,price:85000,cnt:2,indiv:true,red:'none',desig:0,parcel:null,parts:[],partsEdited:false,st:'area',qty:1,bld:false,bparts:[],region:'군',regionAuto:true,conv:0};
 const S=Object.assign({},DEF);
 const REDS=[['none','해당 없음',0],['merit','국가유공자·장애인 본인 땅',.3],['dis','자연재해 피해 복구',.5]];
+// 어려운 말 풀이
+const GLOSS={
+ jimok:['지목','땅을 쓰는 용도에 따라 붙인 이름이에요. 대(집터), 전(밭), 답(논), 임야(산), 도로 등 28가지가 있어요.'],
+ price:['공시지가','시장·군수·구청장이 매년 1월 1일 기준으로 정해 5월 말쯤 알리는 1㎡당 땅값이에요. 세금과 측량 수수료 계산에 써요.'],
+ su:['수치지역','도시개발·구획정리 등으로 경계를 좌표(숫자)로 등록한 지역이에요. 경계점좌표등록부가 있고, 면적이 소수점까지 나와요.'],
+ pyo:['경계점표지','측량으로 찾은 경계점에 박는 말뚝이에요. 수수료와 별도로 표지 값을 내요.'],
+ use:['용도지역','국토계획법에 따라 땅을 주거·상업·공업·녹지·관리·농림 등으로 나눈 것이에요. 지을 수 있는 건물이 달라져요.'],
+ cad:['연속지적도','지적도를 이어 붙여 지도에 겹친 참고 자료예요. 법적 효력이 없어서 실제 경계는 측량으로 확인해요.'],
+ daejang:['토지대장·임야대장','땅의 지번·지목·면적을 적은 공적 장부예요. 지번 앞에 \'산\'이 붙으면 임야대장에 있는 땅이에요.']};
+const py=a=>Math.round((+a||0)/3.3058).toLocaleString();
+const qm=k=>`<button type="button" class="qm" data-g="${k}" aria-label="${GLOSS[k][0]} 설명">?</button>`;
+document.addEventListener('click',e=>{const b=e.target.closest('.qm'),old=document.querySelector('.gbub');
+  if(old){const same=b&&old.dataset.k===b.dataset.g;old.remove();if(same)return}
+  if(!b)return;e.preventDefault();const g=GLOSS[b.dataset.g],d=document.createElement('div');d.className='gbub';d.dataset.k=b.dataset.g;
+  d.innerHTML=`<b>${g[0]}</b>${g[1]}`;document.body.appendChild(d);const r=b.getBoundingClientRect(),w=Math.min(300,innerWidth-24);d.style.width=w+'px';
+  d.style.left=Math.max(12,Math.min(innerWidth-w-12,r.left+r.width/2-w/2))+'px';d.style.top=(r.bottom+6)+'px'},true);
 const STS=[['area','면적','한 필지를 두 부분 이상으로 나누어 면적을 내요.'],['block','구획','건축물·구조물·점유 형태를 구획으로 도면에 표시해요.'],['point','점','전신주·묘지·철탑 등을 점으로 도면에 표시해요.'],['line','선','도로·하천·담장 등을 선으로 도면에 표시해요.']];
 const DESIG=[[0,'기본','현황대로',"담장·논둑·도로 등 현장의 현황대로 나누어 면적을 내요."],[.3,'선 지정','+30%',"도시계획선 등 지정된 선으로 나누어 면적을 내요."],[.4,'면적 지정','+40%',"건축허가 등 지정된 면적대로 나누어 면적을 내요."]];
 
 // ───────── 화면 그리기 ─────────
 $('kinds').innerHTML=KINDS.map(o=>`<button type="button" data-k="${o.k}"><b>${o.q}</b><small>${o.n}</small></button>`).join('');
-$('kinds').onclick=e=>{const b=e.target.closest('button');if(b){S.kind=b.dataset.k;render()}};
+$('kinds').onclick=e=>{const b=e.target.closest('button');if(b){S.kind=b.dataset.k;render();if(S.kind==='city'&&window.__planOn)window.__planOn()}};
 // 용도지역·지구 표시 : 용도지역은 크게, 나머지 지구·구역은 작게
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
-  return `<div class="uses"><div class="uz"><span>용도지역</span><b>${z.length?z.map(x=>esc(x[0])+(x[1]&&x[1]!=='포함'?` <small>(${esc(x[1])})</small>`:'')).join(', '):'확인 안 됨'}</b></div>
+  return `<div class="uses"><div class="uz"><span>용도지역 ${qm('use')}</span><b>${z.length?z.map(x=>esc(x[0])+(x[1]&&x[1]!=='포함'?` <small>(${esc(x[1])})</small>`:'')).join(', '):'확인 안 됨'}</b></div>
   ${o.length?`<div class="uo">${o.slice(0,12).map(x=>`<span>${esc(x[0])}${x[1]&&x[1]!=='포함'?` · ${esc(x[1])}`:''}</span>`).join('')}${o.length>12?`<span>외 ${o.length-12}개</span>`:''}</div>`:''}
   <div class="hint"><a href="https://www.eum.go.kr" target="_blank" rel="noopener">토지이음</a>에서 토지이용계획 전체를 볼 수 있어요.</div></div>`}
 // 공시지가 연도별 추이 (막대)
@@ -241,7 +271,7 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
   <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
 function pBoxHTML(){
   const p=S.parcel;
-  const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${esc(p.jimok?('지목 '+p.jimok+' · '):'')}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+  const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     :`<div class="empty">지도에서 땅을 누르면 지번·공시지가·면적이 채워져요. 아래는 예시 값이에요.</div>`;
@@ -252,11 +282,13 @@ function pBoxHTML(){
     <button type="button" data-l="토지">일반 땅<small>토지대장</small></button>
     <button type="button" data-l="임야">산<small>지번 앞 '산'</small></button>
     <button type="button" data-l="수치">좌표 지역<small>구획정리 등</small></button></div>
-  ${p&&p.autoLand?`<div class="note2"><b>수치지역입니다</b>경계점좌표등록부가 있는 땅이라 '좌표 지역' 단가로 계산했어요.</div>`
-    :p&&p.areaSrc==='대장'&&S.land==='토지'&&S.area%1!==0?`<div class="note2"><b>수치지역일 수 있어요</b>대장 면적에 소수점이 있어요. 수치지역(경계점좌표등록부)이면 금액이 달라져요. <button type="button" id="toSu">좌표 지역으로 계산</button></div>`:''}
+  ${p&&p.pnu&&p.jimok&&p.pnu[10]==='1'&&/^임/.test(p.jimok)?`<div class="note2"><b>지목은 임야지만 토지대장 땅이에요 ${qm('daejang')}</b>지번 앞에 '산'이 없어서 '일반 땅' 단가로 계산해요.</div>`:''}
+  ${p&&p.pnu&&p.jimok&&p.pnu[10]==='2'&&!/^임/.test(p.jimok)?`<div class="note2"><b>지목은 ${esc(p.jimok)}이지만 임야대장 땅이에요 ${qm('daejang')}</b>지번 앞에 '산'이 붙어 있어서 '산' 단가로 계산해요.</div>`:''}
+  ${p&&p.autoLand?`<div class="note2"><b>수치지역입니다 ${qm('su')}</b>경계점좌표등록부가 있는 땅이라 '좌표 지역' 단가로 계산했어요.</div>`
+    :p&&p.areaSrc==='대장'&&S.land==='토지'&&S.area%1!==0?`<div class="note2"><b>수치지역일 수 있어요 ${qm('su')}</b>대장 면적에 소수점이 있어요. 수치지역(경계점좌표등록부)이면 금액이 달라져요. <button type="button" id="toSu">좌표 지역으로 계산</button></div>`:''}
   <div class="row2">
-    <label class="f" for="area">면적<span class="in"><input id="area" type="number" inputmode="decimal" min="1" value="${S.area}"><span>㎡</span></span><span class="hint">${p?(p.areaSrc==='대장'?'토지대장 면적':p.areaSrc==='대기'?'대장 면적 가져오는 중…':'지도로 잰 값 · 대장과 다르면 고치세요'):'약 '+Math.round(S.area/3.3058).toLocaleString()+'평'}</span></label>
-    <label class="f" for="price">공시지가<span class="in"><input id="price" type="number" inputmode="numeric" min="0" value="${S.price}"><span>원/㎡</span></span><span class="hint"><a href="https://www.realtyprice.kr" target="_blank" rel="noopener">공시가격 알리미</a></span></label>
+    <label class="f" for="area">면적<span class="in"><input id="area" type="number" inputmode="decimal" min="1" value="${S.area}"><span>㎡</span></span><span class="hint"><b id="py">약 ${py(S.area)}평</b> · ${p?(p.areaSrc==='대장'?'토지대장 면적':p.areaSrc==='대기'?'대장 면적 가져오는 중…':'지도로 잰 값 · 대장과 다르면 고치세요'):'예시 값'}</span></label>
+    <label class="f" for="price"><span>공시지가 ${qm('price')}</span><span class="in"><input id="price" type="number" inputmode="numeric" min="0" value="${S.price}"><span>원/㎡</span></span><span class="hint"><a href="https://www.realtyprice.kr" target="_blank" rel="noopener">공시가격 알리미</a></span></label>
   </div>
   ${S.kind==='stat'?`<div class="f">현황 구분<div class="seg seg4" id="sts">${STS.map(t=>`<button type="button" data-s="${t[0]}" aria-pressed="${S.st===t[0]}">${t[1]}</button>`).join('')}</div><span class="hint">${esc(STS.find(t=>t[0]===S.st)[2])}</span></div>`:''}
   ${S.kind==='stat'&&S.st!=='area'?`<label class="f" for="qty">${S.st==='block'?'구획 수':S.st==='point'?'점 수':'선 수'}<span class="in"><input id="qty" type="number" inputmode="numeric" min="1" max="50" value="${S.qty}"><span>개</span></span><span class="hint">${S.st==='block'?'건물·구조물 하나가 1구획이에요.':'같은 땅 안에서 두 번째부터는 50% 감면돼요.'}</span></label>${S.st==='block'?`<label class="chk"><input type="checkbox" id="bld" ${S.bld?'checked':''}>건축물이 대상이에요</label>${S.bld?`<div class="f">구획별 건물 면적<div class="parts" id="bparts">${Array.from({length:S.qty},(_,i)=>`<span class="in"><b class="pn">${i+1}</b><input type="number" inputmode="decimal" min="0" data-b="${i}" value="${S.bparts[i]||''}" placeholder="면적"><span>㎡</span></span>`).join('')}</div><span class="hint">건축물대장이나 설계도의 면적을 넣어요. 기준면적(${BASE.stat[S.land].toLocaleString()}㎡)을 넘으면 가산돼요.</span></div>`:''}`:''}`:''}
@@ -274,7 +306,7 @@ function bindInputs(){
   $('lands').onclick=e=>{const b=e.target.closest('button');if(b){S.land=b.dataset.l;render()}};
   const num=(id,key)=>{const el=$(id);if(el)el.oninput=()=>{S[key]=+el.value||0;calc()}};
   num('price','price');
-  $('area').oninput=()=>{S.area=+$('area').value||0;S.partsEdited=false;renderParts();calc()};
+  $('area').oninput=()=>{S.area=+$('area').value||0;if($('py'))$('py').textContent='약 '+py(S.area)+'평';S.partsEdited=false;renderParts();calc()};
   if($('cnt'))$('cnt').oninput=()=>{const v=Math.floor(+$('cnt').value);if(v>=2&&v<=30){S.cnt=v;S.partsEdited=false;if(window.__split&&S.fromDraw)window.__split.clear();renderParts();calc()}};
   renderParts();
   if($('indiv'))$('indiv').onchange=e=>{S.indiv=e.target.checked;calc()};
@@ -300,8 +332,8 @@ function render(){
 function eqParts(){const N=Math.max(2,Math.min(30,Math.floor(S.cnt||2))),A=Math.max(0,S.area),e=Math.floor(A/N*10)/10,p=Array(N).fill(e);p[N-1]=Math.round((A-e*(N-1))*10)/10;return p}
 function renderParts(){const box=$('parts');if(!box)return;
   if(!S.partsEdited||S.parts.length!==Math.max(2,Math.min(30,Math.floor(S.cnt||2))))S.parts=eqParts();
-  box.innerHTML=S.parts.map((v,i)=>`<span class="in"><b class="pn">${i+1}</b><input type="number" inputmode="decimal" min="0" data-p="${i}" value="${v}"><span>㎡</span></span>`).join('');
-  box.oninput=e=>{const t=e.target.closest('input[data-p]');if(!t)return;S.parts[+t.dataset.p]=+t.value||0;S.partsEdited=true;S.fromDraw=false;partsSum();calc()};partsSum()}
+  box.innerHTML=S.parts.map((v,i)=>`<span class="in"><b class="pn">${i+1}</b><input type="number" inputmode="decimal" min="0" data-p="${i}" value="${v}"><span>㎡<br><small data-py="${i}">${py(v)}평</small></span></span>`).join('');
+  box.oninput=e=>{const t=e.target.closest('input[data-p]');if(!t)return;S.parts[+t.dataset.p]=+t.value||0;S.partsEdited=true;S.fromDraw=false;{const q=box.querySelector(`[data-py="${t.dataset.p}"]`);if(q)q.textContent=py(t.value)+'평'}partsSum();calc()};partsSum()}
 function partsSum(){const el=$('partsSum');if(!el)return;const sum=Math.round(S.parts.reduce((a,b)=>a+b,0)*10)/10,d=Math.round((sum-S.area)*10)/10;
   el.innerHTML=S.partsEdited?(Math.abs(d)<0.05?`합계 ${sum.toLocaleString()}㎡ · 원래 면적과 같아요`:`<span style="color:var(--red)">합계 ${sum.toLocaleString()}㎡ · 원래 면적(${S.area.toLocaleString()}㎡)과 ${Math.abs(d).toLocaleString()}㎡ ${d>0?'많아요':'모자라요'}</span>`):'똑같이 나눈 값이에요. 실제 나눌 면적을 알면 고쳐 주세요.'}
 function compute(st,noBulk){
@@ -468,6 +500,15 @@ $('sumModal').onclick=e=>{if(e.target.id==='sumModal')$('sumClose').onclick()};
 $('sumPrint').onclick=()=>window.print();
 // 공유 링크로 들어온 경우
 {const h=location.hash.slice(1);if(h){const q=new URLSearchParams(h);if(q.get('p')&&(window.VWORLD_KEY||'').trim())PENDING=q;else applyShare(q)}}
+// 큰 글씨 모드 (이 기기에 기억)
+const setBig=on=>{document.body.classList.toggle('bigtext',on);$('bBig').setAttribute('aria-pressed',on);try{localStorage.setItem('sg_big',on?'1':'')}catch(e){}};
+$('bBig').onclick=()=>setBig(!document.body.classList.contains('bigtext'));try{if(localStorage.getItem('sg_big'))setBig(true)}catch(e){}
+// 홈 화면에 추가 (안드로이드 : 설치 창 / 아이폰 : 안내)
+let INST=null;const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;$('bInst').hidden=false});
+if(!standalone&&/iPhone|iPad|iPod/.test(navigator.userAgent))$('bInst').hidden=false;
+$('bInst').onclick=async()=>{if(INST){INST.prompt();await INST.userChoice;INST=null;$('bInst').hidden=true}else alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.")};
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 function tip(t){document.getElementById('tip').textContent=t}
 // ───────── 지도 (브이월드) ─────────
@@ -481,6 +522,17 @@ const layers=KEY?{base:L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/
 let cur='base';layers.base.addTo(map);
 const CRS900913=L.extend({},L.CRS.EPSG3857,{code:'EPSG:900913'});
 if(KEY)L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun_line',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:15,maxZoom:21,referrerPolicy:'no-referrer'}).addTo(map);
+// 겹쳐 보기 : 용도지역(lt_c_uq111~114), 도시계획시설(lt_c_upisuq151~159) — 지적선 아래에 깔림
+const OVL={};
+function ovl(name,lays){if(!KEY)return null;const L2=lays.join(',');return L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:L2,styles:L2,format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:12,maxZoom:21,opacity:.55,referrerPolicy:'no-referrer',attribution:'브이월드 '+name})}
+OVL.use=ovl('용도지역',['lt_c_uq111','lt_c_uq112','lt_c_uq113','lt_c_uq114']);
+OVL.plan=ovl('도시계획',['lt_c_upisuq151','lt_c_upisuq152','lt_c_upisuq153','lt_c_upisuq154','lt_c_upisuq155','lt_c_upisuq156','lt_c_upisuq157','lt_c_upisuq158','lt_c_upisuq159']);
+function setOv(k,on){const l=OVL[k],b=$(k==='use'?'bUse':'bPlan');if(!l)return tip('겹쳐 보기는 브이월드 키가 있어야 해요');
+  if(on){l.addTo(map);l.bringToBack();if(layers[cur])layers[cur].bringToBack();if(map.getZoom()<12)map.setZoom(15)}else map.removeLayer(l);b.setAttribute('aria-pressed',on);
+  if(on)tip(k==='use'?'용도지역을 색으로 칠했어요 (참고용)':'도시계획도로·시설을 겹쳤어요 (참고용)')}
+$('bUse').onclick=()=>setOv('use',$('bUse').getAttribute('aria-pressed')!=='true');
+$('bPlan').onclick=()=>setOv('plan',$('bPlan').getAttribute('aria-pressed')!=='true');
+window.__planOn=()=>{if(OVL.plan&&$('bPlan').getAttribute('aria-pressed')!=='true')setOv('plan',true)};
 $('bLayer').onclick=()=>{if(!layers.sat)return tip('위성 사진은 브이월드 키가 있어야 보여요');map.removeLayer(layers[cur]);cur=cur==='base'?'sat':'base';layers[cur].addTo(map).bringToBack();$('bLayer').textContent=cur==='base'?'위성':'일반'};
 const hl=L.layerGroup().addTo(map);window.__hl=hl;
 // 브이월드 API는 JSONP(스크립트 태그)로 부름
@@ -595,7 +647,7 @@ function redraw(){SP.layer.clearLayers();const pj=proj();if(!pj)return;
   const tot=pcs.reduce((s,p)=>s+pieceA(p),0),scale=tot>0&&S.area>0?S.area/tot:1,areas=pcs.map(p=>Math.round(pieceA(p)*scale*10)/10);
   const cols=['#1f4fbf','#d7262b','#0f8a5f','#b7791f','#6b46c1','#c05621'],many=pcs.length>=2;
   if(many)pcs.forEach((pc,i)=>{L.polygon(pc.map(r=>r.map(p=>pj.b(p[0],p[1]))),{color:cols[i%6],weight:1.5,fillColor:cols[i%6],fillOpacity:.25,interactive:false}).addTo(SP.layer);
-    const c=centroid(pc[0]);L.marker(pj.b(c[0],c[1]),{interactive:false,icon:L.divIcon({className:'splabw',html:`<span class="splab"><b>${NUM[i]||i+1}</b> ${areas[i].toLocaleString()}㎡</span>`,iconSize:[0,0]})}).addTo(SP.layer)});
+    const c=centroid(pc[0]);L.marker(pj.b(c[0],c[1]),{interactive:false,icon:L.divIcon({className:'splabw',html:`<span class="splab"><b>${NUM[i]||i+1}</b> ${areas[i].toLocaleString()}㎡ <small>(${py(areas[i])}평)</small></span>`,iconSize:[0,0]})}).addTo(SP.layer)});
   SP.lines.forEach((ln,li)=>{L.polyline(ln,{color:'#111',weight:3,interactive:false}).addTo(SP.layer);
     if(!SP.locked&&!SP.on)ln.forEach((pt,pi)=>{const m=L.marker(pt,{draggable:true,icon:L.divIcon({className:'sphandle',iconSize:[18,18]})}).addTo(SP.layer);
       m.on('drag',e=>{SP.lines[li][pi]=e.target.getLatLng();redrawSoon()});m.on('dragend',e=>{SP.lines[li][pi]=snap(e.target.getLatLng());redraw()})})});

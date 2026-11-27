@@ -1,0 +1,25 @@
+{
+ "name": "땅 측량 길잡이",
+ "short_name": "땅 길잡이",
+ "description": "지도에서 땅을 누르면 공시지가·용도지역과 측량 수수료, 신청 방법을 알려 드려요.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#ffffff",
+ "theme_color": "#17203a",
+ "lang": "ko",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
