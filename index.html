@@ -165,7 +165,7 @@ tr.sum td{font-weight:900}
   <div class="mapwrap">
     <div id="map" aria-label="지적도 지도"></div>
     <form class="search" id="sForm" role="search">
-      <input id="sQ" type="search" placeholder="주소나 지번 (예: 안동시 풍천면 갈전리 1155)" autocomplete="off" aria-label="주소 검색">
+      <input id="sQ" type="search" placeholder="지번이나 도로명 (예: 안동시 풍천면 갈전리 1155)" autocomplete="off" aria-label="주소 검색">
       <button type="submit">찾기</button>
     </form>
     <div class="hits" id="hits" hidden></div>
@@ -882,12 +882,13 @@ $('sForm').onsubmit=async e=>{e.preventDefault();const q=$('sQ').value.trim();if
   if(!KEY)return tip('주소 찾기는 브이월드 키가 있어야 해요');
   const box=$('hits');box.hidden=false;box.innerHTML='<button type="button" disabled>찾는 중…</button>';
   try{
-    let items=[];
-    for(const cat of ['parcel','road']){
+    let items=[],hit='parcel';const isRoad=/[가-힣0-9](로|길)\s*\d/.test(q)||/(로|길)$/.test(q);
+    for(const cat of isRoad?['road','parcel']:['parcel','road']){
       const d=await vw('search',{service:'search',request:'search',version:'2.0',crs:'EPSG:4326',size:'8',page:'1',query:q,type:'address',category:cat});
-      const it=d&&d.response&&d.response.result&&d.response.result.items;if(it&&it.length){items=it;break}}
+      const it=d&&d.response&&d.response.result&&d.response.result.items;if(it&&it.length){items=it;hit=cat;break}}
     if(!items.length){box.innerHTML='<button type="button" disabled>찾는 주소가 없어요. 시·군과 동·리를 함께 넣어 보세요</button>';return}
-    box.innerHTML=items.map((it,i)=>`<button type="button" data-i="${i}">${esc((it.address&&(it.address.parcel||it.address.road))||it.title||'')}</button>`).join('');
+    box.innerHTML=items.map((it,i)=>{const a=it.address||{},main=(hit==='road'?a.road||a.parcel:a.parcel||a.road)||it.title||'',sub=hit==='road'?a.parcel:a.road;
+      return `<button type="button" data-i="${i}">${esc(main)}${sub?`<small style="display:block;color:var(--mut);font-size:12px">${hit==='road'?'지번 ':'도로명 '}${esc(sub)}</small>`:''}</button>`}).join('');
     box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const it=items[+b.dataset.i];box.hidden=true;
       const x=+it.point.x,y=+it.point.y,id=String(it.id||'');window.__searchRoad=(it.address&&it.address.road)||'';map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
   }catch(err){box.innerHTML=`<button type="button" disabled>${esc(err.message)}</button>`}};
