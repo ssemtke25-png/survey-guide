@@ -163,6 +163,7 @@ tr.sum td{font-weight:900}
     <div class="fabs">
       <button class="fab alt ov" id="bUse" type="button" aria-pressed="false">용도지역</button>
       <button class="fab alt ov" id="bPlan" type="button" aria-pressed="false">도시계획</button>
+      <button class="fab alt ov" id="bJibun" type="button" aria-pressed="false">지번</button>
       <button class="fab alt" id="bLayer" type="button">위성</button>
       <button class="fab" id="bMe" type="button">내 위치</button>
     </div>
@@ -572,9 +573,26 @@ if(!KEY){const m=document.createElement('div');m.className='nokey';
   document.querySelector('.mapwrap').appendChild(m)}
 const layers=KEY?{base:L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Base/{z}/{y}/{x}.png`,VW),sat:L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Satellite/{z}/{y}/{x}.jpeg`,VW)}
   :{base:L.layerGroup()};
+// 브이월드 점검·장애 때 안내 (한 번만)
+let VWD=false;function vwDown(){if(VWD)return;VWD=true;const m=document.createElement('div');m.className='nokey';
+  m.innerHTML='<b>지도 서비스를 잠시 쓸 수 없어요</b>지도를 제공하는 브이월드(국토교통부)가 점검 중이거나 접속이 많아요.<a href="https://www.vworld.kr/notice/serviceNotice.html" target="_blank" rel="noopener">브이월드 점검 안내 보기</a><small>수수료 계산은 오른쪽 칸에 직접 넣어 쓸 수 있어요. <button type="button" onclick="this.closest(\'.nokey\').remove()">닫기</button></small>';
+  document.querySelector('.mapwrap').appendChild(m)}
+// 지도 그림이 계속 안 받아지면 알려 줌 (브이월드 사용량 초과 등)
+function watchTiles(l){if(!l||!l.on)return;let ok=0,bad=0,told=false;l.on('tileload',()=>{ok++;bad=0});
+  l.on('tileerror',()=>{bad++;if(!told&&bad>=8&&ok<1){told=true;vwDown();console.warn('지도 타일 오류 계속됨')}})}
+watchTiles(layers.base);
+// 위성 사진이 하나도 안 오면 일반 지도로 자동 복귀
+if(layers.sat){let ok=0,bad=0;layers.sat.on('tileload',()=>{ok++;bad=0});layers.sat.on('tileerror',()=>{bad++;
+  if(bad>=6&&ok<1&&cur==='sat'){bad=-999;map.removeLayer(layers.sat);cur='base';layers.base.addTo(map).bringToBack();$('bLayer').textContent='위성';if(typeof syncNames==='function')syncNames();
+    tip('위성 사진을 지금 받을 수 없어 일반 지도로 돌아왔어요');console.warn('위성 타일 오류')}});
+  layers.sat.on('add',()=>{ok=0;bad=0})}
 let cur='base';layers.base.addTo(map);
 const CRS900913=L.extend({},L.CRS.EPSG3857,{code:'EPSG:900913'});
-if(KEY)L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun_line',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:15,maxZoom:21,referrerPolicy:'no-referrer'}).addTo(map);
+// 지적선 : 기본은 선만, '지번' 버튼을 켜면 지번 글자가 있는 모양으로 (17단계 이상)
+const CAD=KEY?L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun_line',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:15,maxZoom:21,referrerPolicy:'no-referrer'}).addTo(map):null;
+const JIBUN=KEY?L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:17,maxZoom:21,referrerPolicy:'no-referrer'}):null;
+// 건물·장소 이름 : 브이월드 하이브리드(위성용 이름 지도)
+const NAMES=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,{maxZoom:21,maxNativeZoom:19,referrerPolicy:'no-referrer',attribution:'브이월드'}):null;
 // 겹쳐 보기 : 용도지역(lt_c_uq111~114), 도시계획시설(lt_c_upisuq151~159) — 지적선 아래에 깔림
 const OVL={};
 function ovl(name,lays){if(!KEY)return null;const L2=lays.join(',');return L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:L2,styles:L2,format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:12,maxZoom:21,opacity:.55,referrerPolicy:'no-referrer',attribution:'브이월드 '+name})}
@@ -595,7 +613,12 @@ function setOv(k,on){const l=OVL[k],b=$(k==='use'?'bUse':'bPlan');if(!l)return t
 $('bUse').onclick=()=>setOv('use',$('bUse').getAttribute('aria-pressed')!=='true');
 $('bPlan').onclick=()=>setOv('plan',$('bPlan').getAttribute('aria-pressed')!=='true');
 window.__planOn=()=>{if(OVL.plan&&$('bPlan').getAttribute('aria-pressed')!=='true')setOv('plan',true)};
-$('bLayer').onclick=()=>{if(!layers.sat)return tip('위성 사진은 브이월드 키가 있어야 보여요');map.removeLayer(layers[cur]);cur=cur==='base'?'sat':'base';layers[cur].addTo(map).bringToBack();$('bLayer').textContent=cur==='base'?'위성':'일반'};
+// 위성 사진일 때는 건물·장소 이름을 자동으로 얹음
+const syncNames=()=>{if(!NAMES)return;if(cur==='sat'){NAMES.addTo(map);NAMES.bringToFront()}else map.removeLayer(NAMES)};
+$('bJibun').onclick=()=>{if(!JIBUN)return tip('지번 보기는 브이월드 키가 있어야 해요');const on=$('bJibun').getAttribute('aria-pressed')!=='true';
+  if(on){JIBUN.addTo(map);if(CAD)map.removeLayer(CAD);if(map.getZoom()<17)map.setZoom(17);tip('지번을 보여 줘요 (많이 확대해야 보여요)')}else{map.removeLayer(JIBUN);if(CAD)CAD.addTo(map)}
+  $('bJibun').setAttribute('aria-pressed',on)};
+$('bLayer').onclick=()=>{if(!layers.sat)return tip('위성 사진은 브이월드 키가 있어야 보여요');map.removeLayer(layers[cur]);cur=cur==='base'?'sat':'base';layers[cur].addTo(map).bringToBack();$('bLayer').textContent=cur==='base'?'위성':'일반';syncNames()};
 const hl=L.layerGroup().addTo(map);window.__hl=hl;
 // 브이월드 API는 JSONP(스크립트 태그)로 부름
 async function geocode(road){if(road in GEO)return GEO[road];GEO[road]=null;
@@ -608,7 +631,7 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
   const cb='__vw'+(++seq),s=document.createElement('script');
   const t=setTimeout(()=>{window[cb]=()=>delete window[cb];s.remove();rej(new Error('브이월드 응답이 없어요'))},ms);
   window[cb]=d=>{clearTimeout(t);delete window[cb];s.remove();res(d)};
-  s.onerror=()=>{clearTimeout(t);delete window[cb];s.remove();rej(new Error('브이월드에 연결하지 못했어요'))};
+  s.onerror=()=>{clearTimeout(t);delete window[cb];s.remove();rej(new Error('브이월드에 연결하지 못했어요'));vwDown()};
   s.src=`https://api.vworld.kr/req/${path}?`+new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',errorformat:'json',callback:cb},params));
   document.head.appendChild(s)})}
 // 국가중점데이터(NED) : 토지대장 면적·지목, 최신 개별공시지가
