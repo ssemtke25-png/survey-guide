@@ -50,7 +50,8 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .fab{height:46px;padding:0 14px}
 .fab.ov{height:38px;font-size:13.5px}.fab.ov[aria-pressed=true]{background:var(--blue);color:#fff;border-color:var(--blue)}
 .fab.alt{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
-.tip{position:absolute;z-index:500;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:rgba(23,32,58,.92);color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;max-width:calc(100% - 150px)}
+.jbl{pointer-events:none}.jbl span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#17203a;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
+.tip{white-space:pre-line;line-height:1.45;position:absolute;z-index:500;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:rgba(23,32,58,.92);color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;max-width:calc(100% - 150px)}
 .warn{border-left:4px solid var(--red);background:#fff4f4;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;margin:0 0 6px}.warn b{display:block;color:var(--red);font-size:14.5px;margin-bottom:2px}
 .refmark{position:absolute;z-index:450;top:calc(64px + env(safe-area-inset-top));left:12px;background:rgba(215,38,43,.92);color:#fff;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;pointer-events:none}
 .hits{position:absolute;z-index:600;top:calc(62px + env(safe-area-inset-top));left:12px;right:12px;max-width:520px;background:#fff;border:1.5px solid var(--ink);border-radius:12px;overflow:hidden}
@@ -318,7 +319,7 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
   <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
 function infoHTML(){
   const p=S.parcel;
-  return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+  return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:p.roadNone?`<div class="road" style="color:var(--mut)">도로명주소 없음 <span style="font-size:12px">(건물이 없는 땅은 도로명주소가 없어요)</span></div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
@@ -596,6 +597,7 @@ function sheetHead(){const p=S.parcel;$('shTitle').textContent=p?p.addr:'지도�
   addEventListener('resize',()=>{if(!isSheet())$('side').style.removeProperty('--sy');else setSheet(SHEET)})}
 render();
 function tip(t){document.getElementById('tip').textContent=t}
+function addrTip(){const p=S.parcel;if(p)tip(p.addr+(p.road?'\n도로명 '+p.road:''))}
 // ───────── 지도 (브이월드) ─────────
 if(typeof L==='undefined'){tip('지도를 불러오지 못했어요. 아래 칸에 직접 넣어 주세요')}else{
 const KEY=(window.VWORLD_KEY||'').trim(),DOMAIN=(window.VWORLD_DOMAIN||'').trim()||(location.protocol==='file:'?'http://localhost':location.origin);
@@ -626,7 +628,29 @@ let cur='base';layers.base.addTo(map);
 const CRS900913=L.extend({},L.CRS.EPSG3857,{code:'EPSG:900913'});
 // 지적선 : 기본은 선만, '지번' 버튼을 켜면 지번 글자가 있는 모양으로 (17단계 이상)
 const CAD=KEY?L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun_line',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:15,maxZoom:21,referrerPolicy:'no-referrer'}).addTo(map):null;
-const JIBUN=KEY?L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:17,maxZoom:21,referrerPolicy:'no-referrer'}):null;
+const JIBUN=KEY?L.layerGroup():null;let jbOn=false,jbSeq=0,jbT=0;const JB_CACHE=new Map();
+// 필지 안쪽 글자 자리 : 외곽선 무게중심 (안에 없으면 꼭짓점 평균)
+function ringCentroid(r){let a=0,x=0,y=0;for(let i=0,n=r.length-1;i<n;i++){const[x0,y0]=r[i],[x1,y1]=r[i+1],c=x0*y1-x1*y0;a+=c;x+=(x0+x1)*c;y+=(y0+y1)*c}
+  if(!a){let sx=0,sy=0;r.forEach(p=>{sx+=p[0];sy+=p[1]});return[sx/r.length,sy/r.length,0]}return[x/(3*a),y/(3*a),Math.abs(a/2)]}
+function inRing(pt,r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>pt[1])!==(yj>pt[1])&&pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)c=!c}return c}
+function labelPt(g){const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;let best=null;
+  for(const pl of polys){const r=pl[0],c=ringCentroid(r);if(!best||c[2]>best[2])best=[...c,r]}
+  if(!best)return null;let pt=[best[0],best[1]];if(!inRing(pt,best[3])){const r=best[3];pt=[(r[0][0]+r[Math.floor(r.length/2)][0])/2,(r[0][1]+r[Math.floor(r.length/2)][1])/2]}return pt}
+async function loadJibun(){if(!jbOn||!JIBUN)return;const z=map.getZoom();
+  if(z<18){JIBUN.clearLayers();tip('지번은 조금 더 확대하면 보여요');return}
+  const b=map.getBounds(),seq=++jbSeq,box=`BOX(${b.getWest().toFixed(6)},${b.getSouth().toFixed(6)},${b.getEast().toFixed(6)},${b.getNorth().toFixed(6)})`;
+  const feats=[];
+  for(let page=1;page<=3;page++){let d;try{d=await vw('data',{service:'data',version:'2.0',request:'getfeature',data:'LP_PA_CBND_BUBUN',geomfilter:box,size:'1000',page:String(page),geometry:'true',attribute:'true',crs:'EPSG:4326'})}catch(e){break}
+    if(seq!==jbSeq)return;const r=d&&d.response;if(!r||r.status!=='OK')break;
+    const fs=(r.result&&r.result.featureCollection&&r.result.featureCollection.features)||[];feats.push(...fs);
+    const tot=+(r.page&&r.page.total)||1;if(page>=tot)break}
+  if(seq!==jbSeq||!jbOn)return;JIBUN.clearLayers();
+  for(const f of feats){const pr=f.properties||{},id=String(pr.pnu||'');let pt=JB_CACHE.get(id);
+    if(!pt){pt=f.geometry&&labelPt(f.geometry);if(!pt)continue;JB_CACHE.set(id,pt)}
+    const t=String(pr.jibun||'').replace(/^산\s*/,'산');if(!t)continue;
+    L.marker([pt[1],pt[0]],{interactive:false,keyboard:false,icon:L.divIcon({className:'jbl',html:`<span>${esc(t)}</span>`,iconSize:null})}).addTo(JIBUN)}
+  if(!feats.length)tip('이 화면에서는 지번을 못 가져왔어요')}
+map.on('moveend',()=>{if(!jbOn)return;clearTimeout(jbT);jbT=setTimeout(loadJibun,250)});
 // 건물·장소 이름 : 브이월드 하이브리드(위성용 이름 지도)
 const NAMES=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,{maxZoom:21,maxNativeZoom:19,referrerPolicy:'no-referrer',attribution:'브이월드'}):null;
 // 겹쳐 보기 : 용도지역(lt_c_uq111~114), 도시계획시설(lt_c_upisuq151~159) — 지적선 아래에 깔림
@@ -652,7 +676,7 @@ window.__planOn=()=>{if(OVL.plan&&$('bPlan').getAttribute('aria-pressed')!=='tru
 // 위성 사진일 때는 건물·장소 이름을 자동으로 얹음
 const syncNames=()=>{if(!NAMES)return;if(cur==='sat'){NAMES.addTo(map);NAMES.bringToFront()}else map.removeLayer(NAMES)};
 $('bJibun').onclick=()=>{if(!JIBUN)return tip('지번 보기는 브이월드 키가 있어야 해요');const on=$('bJibun').getAttribute('aria-pressed')!=='true';
-  if(on){JIBUN.addTo(map);if(CAD)map.removeLayer(CAD);if(map.getZoom()<17)map.setZoom(17);tip('지번을 보여 줘요 (많이 확대해야 보여요)')}else{map.removeLayer(JIBUN);if(CAD)CAD.addTo(map)}
+  jbOn=on;if(on){JIBUN.addTo(map);tip('지번을 보여 줘요');if(map.getZoom()<18)map.setZoom(18);else loadJibun()}else{jbSeq++;JIBUN.clearLayers();map.removeLayer(JIBUN)}
   $('bJibun').setAttribute('aria-pressed',on)};
 $('bLayer').onclick=()=>{if(!layers.sat)return tip('위성 사진은 브이월드 키가 있어야 보여요');map.removeLayer(layers[cur]);cur=cur==='base'?'sat':'base';layers[cur].addTo(map).bringToBack();$('bLayer').textContent=cur==='base'?'위성':'일반';syncNames()};
 const hl=L.layerGroup().addTo(map);window.__hl=hl;
@@ -692,7 +716,7 @@ async function ledger(p){
   if(c){if(c.area){S.area=c.area;S.partsEdited=false;p.areaSrc='대장'}else p.areaSrc='지도';
     for(const k of ['jimok','scale','price','year','hist','uses','road','own'])if(c[k]!=null)p[k]=c[k];
     if(c.price)S.price=c.price;if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}
-    if(!p.road)roadAddr(p).then(()=>{if(S.parcel===p&&p.road){lcPut(pnu,Object.assign({},c,{road:p.road}));render()}});
+    if(!p.road)roadAddr(p).then(()=>{if(S.parcel!==p)return;if(p.road)lcPut(pnu,Object.assign({},c,{road:p.road}));render();addrTip()});
     if(PENDING){applyShare(PENDING);PENDING=null}render();return}
   const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
       const a=parseFloat(it.lndpclAr);if(a>0){S.area=Math.round(a*10)/10;S.partsEdited=false;p.areaSrc='대장'}
@@ -707,15 +731,21 @@ async function ledger(p){
       if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}
       const H={};for(const x of L){const y=String(x.stdrYear||'');if(y&&!(y in H))H[y]=+x.pblntfPclnd}p.hist=Object.keys(H).sort().map(y=>[y,H[y]]).slice(-10)}).catch(()=>{});
   const job3=landUse(p).catch(()=>{}),job4=roadAddr(p).catch(()=>{});
-  await Promise.all([job1,job2,job3,job4]);if(same()){lcPut(pnu,{area:p.areaSrc==='대장'?S.area:0,jimok:p.jimok,scale:p.scale,price:p.price,year:p.year,hist:p.hist,uses:p.uses,road:p.road,own:p.own});if(PENDING){applyShare(PENDING);PENDING=null}render()}
+  await Promise.all([job1,job2,job3,job4]);if(same()){lcPut(pnu,{area:p.areaSrc==='대장'?S.area:0,jimok:p.jimok,scale:p.scale,price:p.price,year:p.year,hist:p.hist,uses:p.uses,road:p.road,own:p.own});if(PENDING){applyShare(PENDING);PENDING=null}render();addrTip()}
 }
 // 용도지역·지구 : 토지이용계획(NED) → 안 되면 용도지역 도면(2D 데이터)에서 찾기
 // 도로명주소 (브이월드 주소 API, 땅 가운데 점 기준)
-async function roadAddr(p){if(p.road||!p.center)return;const [lat,lon]=p.center;
+async function roadAddr(p){if(p.road)return;
+  // 1) 지번으로 검색해서 그 필지에 붙은 도로명주소 (건물 위치를 안 눌러도 찾음)
+  try{const d=await vw('search',{service:'search',request:'search',version:'2.0',crs:'EPSG:4326',size:'5',page:'1',query:p.addr,type:'address',category:'parcel'});
+    const its=(d&&d.response&&d.response.result&&d.response.result.items)||[],jb=String(p.addr).trim().split(' ').pop();
+    const it=its.find(x=>x.address&&x.address.road&&String(x.address.parcel||'').trim().split(' ').pop()===jb);
+    if(it){p.road=String(it.address.road);return}}catch(e){}
+  if(!p.center){p.roadNone=1;return}const [lat,lon]=p.center;
   const pick=d=>{const r=d&&d.response&&d.response.result;if(!Array.isArray(r))return '';const it=r.find(x=>x.type==='road'||/로|길/.test(String(x.text||'').split(' ').slice(-2).join(' ')))||null;return it&&it.text?String(it.text):''};
   for(const type of ['road','both']){try{const d=await vw('address',{service:'address',request:'getAddress',version:'2.0',crs:'EPSG:4326',point:`${lon.toFixed(7)},${lat.toFixed(7)}`,type,simple:'false'});
     console.log('도로명 조회('+type+')',d&&d.response&&d.response.status,d&&d.response&&d.response.result);
-    const t=pick(d);if(t&&(type==='road'||!/\d+-?\d*$/.test(t)||/로|길/.test(t))){p.road=t;return}}catch(e){}}}
+    const t=pick(d);if(t&&(type==='road'||!/\d+-?\d*$/.test(t)||/로|길/.test(t))){p.road=t;return}}catch(e){}}p.roadNone=1}
 async function landUse(p){
   try{const d=await ned('getLandUseAttr',{pnu:p.pnu,numOfRows:'100'});
     const L=deep(d,'prposAreaDstrcCodeNm');if(L.length){const seen=new Set(),u=[];
@@ -744,7 +774,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
-    if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;tip(S.parcel.addr);addHist(S.parcel,lat,lon);render();
+    if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();
     ledger(S.parcel);
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
