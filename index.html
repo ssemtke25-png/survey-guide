@@ -71,7 +71,7 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .note2{border-left:4px solid var(--blue);background:#eef3ff;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5}.note2 b{display:block;color:var(--blue);font-size:14.5px}.note2 button{margin-top:6px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:6px 12px;cursor:pointer}
 .bl{padding:4px 0;border-top:1px dashed var(--line)}.bl:first-of-type{border-top:0}.bl span{color:var(--mut);font-size:13px}
-.mv summary{cursor:pointer;list-style:none}.mv summary::-webkit-details-marker{display:none}.mv table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}.mv th{color:var(--mut);font-weight:400;text-align:left;border-bottom:1px solid var(--line);padding:3px 2px}.mv td{padding:3px 2px;border-bottom:1px dashed var(--line)}
+.mv summary{cursor:pointer;list-style:none}.mv summary::-webkit-details-marker{display:none}.mv table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}.mv th{color:var(--mut);font-weight:400;text-align:left;border-bottom:1px solid var(--line);padding:3px 2px}.mv td{padding:3px 2px;border-bottom:1px dashed var(--line);vertical-align:top}.mv td:not(:nth-child(2)),.mv th{white-space:nowrap}.mv td:nth-child(2){padding:3px 6px}
 .hist{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.hh2{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:13px}.hh2>b{font-size:14px}
 .bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin:6px 0 2px}.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}.bar i{display:block;width:100%;max-width:26px;background:var(--ink);border-radius:4px 4px 0 0}.bar:last-child i{background:var(--red)}.bar{cursor:pointer}.bar.on i{background:var(--blue)}.bar small{font-size:11px;color:var(--mut)}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}.acts button{padding:11px 4px;border:1.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);font-weight:700;font-size:14px;cursor:pointer}.acts #bAdd{background:var(--ink);color:#fff}
@@ -322,7 +322,7 @@ function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d)}</td><td>${esc(x.why)
   return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d)} ${esc(m[0].why)}</span></summary>
   <table><thead><tr><th>날짜</th><th>사유</th><th>지목</th><th style="text-align:right">면적</th></tr></thead><tbody>${rows.join('')}</tbody></table></details>`}
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
-const API_BLD=['getBuildingUse','getBuildingAge','getBuldInfoAttr','getBuildingInfoAttr'],API_MV=['getLandMoveAttr','getLandMovHistAttr','getLadMvmnHistAttr'];
+const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
 async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
@@ -331,8 +331,8 @@ async function extraInfo(p){const log=PROBE?[]:null;
   if(b)p.bld=b.map(o=>({name:pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i]),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
     year:ymd(pickF(o,[/useConfm.*De$/i,/useApr.*/i,/confm.*De$/i,/^useYmd/i])),area:+pickF(o,[/^totar$/i,/tot.*Ar(ea)?$/i])||0,
     fl:pickF(o,[/^(grnd|ground).*(flr|floor)/i,/grndFlrCnt/i]),ufl:pickF(o,[/^(ugrnd|under).*(flr|floor)/i]),str:pickF(o,[/strct.*Nm$/i])})).filter(x=>x.name||x.use||x.year||x.area);
-  if(m)p.mv=m.map(o=>({d:ymd(pickF(o,[/ladMvmn.*De$/i,/mvmn.*De$/i,/De$/])),why:String(pickF(o,[/Prvonsh.*Nm$/i,/(rsn|resn|reason).*Nm$/i,/Prvonsh/i])||''),
-    jm:String(pickF(o,[/lndcgr.*Nm$/i])||''),ar:pickF(o,[/^lndpclAr$/i,/Ar$/])})).filter(x=>x.d||x.why).sort((a,b)=>b.d.localeCompare(a.d));
+  if(m)p.mv=m.map(o=>({d:ymd(o.ladMvmnDe),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
+    jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).sort((a,b)=>b.d.localeCompare(a.d));
   if(log)p.probe=log.join('\n\n')}
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
