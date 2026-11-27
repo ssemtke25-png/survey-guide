@@ -535,12 +535,13 @@ const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),isIOS=/iPho
 $('bInst').textContent=isMobile?'📲 홈 화면에 추가':'🖥️ 바탕화면에 추가';
 if(!standalone&&(isIOS||!isMobile))$('bInst').hidden=false;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;if(!standalone)$('bInst').hidden=false});
-addEventListener('appinstalled',()=>{$('bInst').hidden=true;tip('설치했어요. 바탕화면·시작 메뉴에서 바로 열 수 있어요')});
+addEventListener('appinstalled',()=>{$('bInst').hidden=true;if(isMobile)tip('설치했어요. 홈 화면에서 바로 열 수 있어요');
+  else setTimeout(()=>alert("설치했어요!\n\n바탕화면에 아이콘이 안 보이면\n· 엣지 : 주소창에 edge://apps → 앱 오른쪽 '…' → '바탕 화면 바로 가기 만들기'\n· 크롬 : 주소창에 chrome://apps → 아이콘 오른쪽 클릭 → '바로가기 만들기'\n· 또는 시작 메뉴에서 아이콘을 바탕화면으로 끌어다 놓기"),400)});
 // PC에서 설치 창을 못 띄우면 바로가기(.url) 파일을 내려받게 함
 function urlShortcut(){const name=(document.querySelector('h1')||{}).textContent||'땅 측량 길잡이',url=location.origin+location.pathname;
   const b=new Blob(['[InternetShortcut]\r\nURL='+url+'\r\nIconIndex=0\r\n'],{type:'application/octet-stream'}),a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download=name+'.url';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
-$('bInst').onclick=async()=>{if(INST){INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
+$('bInst').onclick=async()=>{if(INST){if(!isMobile)tip("설치 뒤 뜨는 창에서 '바탕 화면 바로 가기 만들기'에 꼭 체크하세요");INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
   if(isIOS)return alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.");
   if(isMobile)return alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.");
   urlShortcut();alert("바로가기 파일을 받았어요. 다운로드 폴더의 파일을 바탕화면으로 옮기면 돼요.\n\n엣지·크롬이라면 주소창 오른쪽의 '앱 설치' 아이콘으로 설치하면 바탕화면과 시작 메뉴에 바로 생겨요.")};
