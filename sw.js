@@ -1,5 +1,5 @@
 // 홈 화면 앱용 : 우리 파일만 잠깐 저장 (지도·브이월드 자료는 항상 새로 받음)
-const V='sg-v16',FILES=['./','index.html','config.js','contacts.js','lx.js','manifest.webmanifest','icon-192.png'];
+const V='sg-v17',FILES=['./','index.html','config.js','contacts.js','lx.js','manifest.webmanifest','icon-192.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(FILES)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))));self.clients.claim()});
 // 새 버전이 먼저 : 인터넷이 되면 항상 새 파일, 안 되면 저장해 둔 파일
