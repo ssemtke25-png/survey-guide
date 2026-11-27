@@ -48,6 +48,8 @@ h2{font-size:16px;margin:18px 0 8px}
 .seg button[aria-pressed=true] small{color:#fff;opacity:.8}
 .seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .note2{border-left:4px solid var(--blue);background:#eef3ff;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5}.note2 b{display:block;color:var(--blue);font-size:14.5px}.note2 button{margin-top:6px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:6px 12px;cursor:pointer}
+.hist{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.hh2{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:13px}.hh2>b{font-size:14px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin:6px 0 2px}.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}.bar i{display:block;width:100%;max-width:26px;background:var(--ink);border-radius:4px 4px 0 0}.bar:last-child i{background:var(--red)}.bar{cursor:pointer}.bar.on i{background:var(--blue)}.bar small{font-size:11px;color:var(--mut)}
 .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:3px}.parts .pn{padding-left:10px;color:var(--mut);font-size:13px}
 .reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
 .reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
@@ -201,9 +203,17 @@ const DESIG=[[0,'기본','현황대로',"담장·논둑·도로 등 현장의 �
 // ───────── 화면 그리기 ─────────
 $('kinds').innerHTML=KINDS.map(o=>`<button type="button" data-k="${o.k}"><b>${o.q}</b><small>${o.n}</small></button>`).join('');
 $('kinds').onclick=e=>{const b=e.target.closest('button');if(b){S.kind=b.dataset.k;render()}};
+// 공시지가 연도별 추이 (막대)
+function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],prev=h[h.length-2],first=h[0];
+  const pc=(a,b)=>b?((a-b)/b*100):0,y1=pc(last[1],prev[1]),yn=pc(last[1],first[1]);
+  const sg=v=>(v>0?'+':'')+v.toFixed(1)+'%',col=v=>v>0?'var(--red)':v<0?'var(--blue)':'var(--mut)';
+  return `<div class="hist"><div class="hh2"><b>공시지가 추이</b><span>작년보다 <b style="color:${col(y1)}">${sg(y1)}</b> · ${first[0]}년보다 <b style="color:${col(yn)}">${sg(yn)}</b></span></div>
+  <div class="bars">${h.map(([y,v])=>`<div class="bar" data-hv="${y}년 ${v.toLocaleString()}원/㎡" title="${y}년 ${v.toLocaleString()}원/㎡"><i style="height:${Math.max(4,v/max*100)}%"></i><small>${String(y).slice(2)}</small></div>`).join('')}</div>
+  <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
 function pBoxHTML(){
   const p=S.parcel;
   const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${esc(p.jimok?('지목 '+p.jimok+' · '):'')}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+    +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     :`<div class="empty">지도에서 땅을 누르면 지번·공시지가·면적이 채워져요. 아래는 예시 값이에요.</div>`;
   const multi=S.kind==='split'||(S.kind==='stat'&&S.st==='area'),split=S.kind==='split',conv=S.kind==='conv';
   const desigBox=`<div class="f">${split?'분할 방식':'적용 구분'}<div class="seg" id="desig">${DESIG.map(d=>`<button type="button" data-d="${d[0]}" aria-pressed="${S.desig===d[0]}">${d[1]}<small>${d[2]}</small></button>`).join('')}</div><span class="hint">${esc(DESIG.find(d=>d[0]===S.desig)[3])}</span></div>`;
@@ -230,6 +240,7 @@ function pBoxHTML(){
   <p class="hint" style="margin:0">모르면 '일반 땅'. 도시개발·구획정리로 새로 만든 땅은 '좌표 지역'(경계점좌표등록부)인 경우가 많아요.</p></div>`;
 }
 function bindInputs(){
+  $('pBox').onclick=e=>{const b=e.target.closest('.bar[data-hv]');if(b&&$('hv')){$('hv').textContent=b.dataset.hv;for(const x of b.parentNode.children)x.classList.toggle('on',x===b)}};
   $('lands').onclick=e=>{const b=e.target.closest('button');if(b){S.land=b.dataset.l;render()}};
   const num=(id,key)=>{const el=$(id);if(el)el.oninput=()=>{S[key]=+el.value||0;calc()}};
   num('price','price');
@@ -406,7 +417,8 @@ async function ledger(p){
       if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}}).catch(()=>{if(same())p.areaSrc='지도'});
   const job2=ned('getIndvdLandPriceAttr',{pnu}).then(d=>{if(!same())return;
       const L=deep(d,'pblntfPclnd').filter(x=>+x.pblntfPclnd>0).sort((a,b)=>(b.stdrYear+(b.stdrMt||'')).localeCompare(a.stdrYear+(a.stdrMt||'')));
-      if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}}).catch(()=>{});
+      if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}
+      const H={};for(const x of L){const y=String(x.stdrYear||'');if(y&&!(y in H))H[y]=+x.pblntfPclnd}p.hist=Object.keys(H).sort().map(y=>[y,H[y]]).slice(-10)}).catch(()=>{});
   await Promise.all([job1,job2]);if(same())render();
 }
 // 면적 (평면 근사, ㎡)
