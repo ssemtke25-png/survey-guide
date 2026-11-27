@@ -44,8 +44,11 @@ h2{font-size:16px;margin:18px 0 8px}
 .seg button small{display:block;font-weight:400;font-size:12px;color:var(--mut)}
 .seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .seg button[aria-pressed=true] small{color:#fff;opacity:.8}
+.reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
+.reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
+.hits .hh{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;font-size:13px;color:var(--mut);background:var(--panel)}.hits .hh button{width:auto;border:0;padding:2px 6px;background:none;color:var(--blue);font-size:13px}
 .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
-label.f{display:grid;gap:3px;font-weight:700;font-size:14px}
+.f{display:grid;gap:3px;font-weight:700;font-size:14px}
 .in{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px}
 .in input{flex:1;width:100%;padding:9px 10px;border:0;background:transparent;font-size:16px}
 .in span{padding-right:10px;color:var(--mut);font-size:13px;white-space:nowrap}
@@ -120,6 +123,7 @@ tr.sum td{font-weight:900}
       <div class="note">2026년 지적측량수수료 고시 기준 예상 금액이에요. 실제 수수료는 접수할 때 확정되고, 경계점표지 값은 따로예요.</div>
     </div>
 
+    <button type="button" class="reset" id="bReset">처음부터 다시</button>
     <div class="box" id="contact"></div>
     <div class="box"><h3 id="nextT">다음에 할 일</h3><ol id="next"></ol></div>
     <div class="box">
@@ -160,7 +164,10 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const won=n=>n.toLocaleString('ko-KR')+'원';
 // 상태 : 예시 값으로 시작 (지도에서 땅을 누르면 바뀜)
-const S={kind:'bound',land:'토지',area:450,price:85000,cnt:2,indiv:true,dis:false,parcel:null};
+const DEF={kind:'bound',land:'토지',area:450,price:85000,cnt:2,indiv:true,red:'none',desig:0,parcel:null};
+const S=Object.assign({},DEF);
+const REDS=[['none','해당 없음',0],['merit','국가유공자·장애인 본인 땅',.3],['dis','자연재해 피해 복구',.5]];
+const DESIG=[[0,'기본','선만 표시'],[.3,'선 지정','+30%'],[.4,'면적 지정','+40%']];
 
 // ───────── 화면 그리기 ─────────
 $('kinds').innerHTML=KINDS.map(o=>`<button type="button" data-k="${o.k}"><b>${o.q}</b><small>${o.n}</small></button>`).join('');
@@ -181,7 +188,9 @@ function pBoxHTML(){
   </div>
   ${split?`<label class="f" for="cnt">나눈 뒤 필지 수<span class="in"><input id="cnt" type="number" inputmode="numeric" min="2" value="${S.cnt}"><span>필지</span></span><span class="hint">면적은 똑같이 나눈다고 보고 계산해요.</span></label>`:''}
   ${(S.kind==='split'||S.kind==='stat')?`<label class="chk"><input type="checkbox" id="indiv" ${S.indiv?'checked':''}>개인이 직접 신청 (작은 땅 10% 감면 판단)</label>`:''}
-  <label class="chk"><input type="checkbox" id="dis" ${S.dis?'checked':''}>자연재해 피해 복구용 (피해사실확인서 제출 시 50% 감면)</label>
+  ${split?`<div class="f">분할 방식<div class="seg" id="desig">${DESIG.map(d=>`<button type="button" data-d="${d[0]}" aria-pressed="${S.desig===d[0]}">${d[1]}<small>${d[2]}</small></button>`).join('')}</div><span class="hint">허가받은 면적대로(면적 지정)나 원하는 선대로(선 지정) 나눠 달라고 하면 가산돼요.</span></div>`:''}
+  <div class="f">감면 대상<div class="reds" id="reds">${REDS.map(r=>`<button type="button" data-r="${r[0]}" aria-pressed="${S.red===r[0]}">${r[1]}${r[2]?` <small>${r[2]*100}% 감면</small>`:''}</button>`).join('')}</div>
+  <span class="hint">${S.red==='merit'?'국가유공자증·장애인증명서와 본인 소유를 확인할 서류가 필요해요.':S.red==='dis'?'피해사실확인서가 필요하고, 재난 난 날부터 2년 안이어야 해요.':'감면은 한 가지만 적용되고, 측량이 끝난 뒤에는 소급되지 않아요.'}</span></div>
   <p class="hint" style="margin:0">모르면 '일반 땅'. 도시개발·구획정리로 새로 만든 땅은 '좌표 지역'(경계점좌표등록부)인 경우가 많아요.</p></div>`;
 }
 function bindInputs(){
@@ -189,7 +198,8 @@ function bindInputs(){
   const num=(id,key)=>{const el=$(id);if(el)el.oninput=()=>{S[key]=+el.value||0;calc()}};
   num('area','area');num('price','price');num('cnt','cnt');
   if($('indiv'))$('indiv').onchange=e=>{S.indiv=e.target.checked;calc()};
-  $('dis').onchange=e=>{S.dis=e.target.checked;calc()};
+  $('reds').onclick=e=>{const b=e.target.closest('button');if(b){S.red=b.dataset.r;render()}};
+  if($('desig'))$('desig').onclick=e=>{const b=e.target.closest('button');if(b){S.desig=+b.dataset.d;render()}};
 }
 function render(){
   for(const b of $('kinds').children)b.setAttribute('aria-pressed',b.dataset.k===S.kind);
@@ -209,8 +219,10 @@ function calc(){
   const [ak,an]=areaK(S.kind,S.land,each);
   if(an)rows.push([`면적 가산 (${an}칸 초과, 품 ×${ak.toFixed(1)})`,won(u)]);
   rows.push([`지가계수 ×${gk} (공시지가 ${P.toLocaleString()}원/㎡)`,won(per)+(split?'/필지':'')]);
-  let tot=per*N;if(split)rows.push([`나눈 뒤 ${N}필지`,won(tot)]);
-  if(S.dis){tot=r1000(tot*.5);rows.push(['자연재해 복구 50% 감면',won(tot)])}
+  let pr=per;if(split&&S.desig){pr=r1000(per*(1+S.desig));rows.push([(S.desig===.4?'면적 지정':'선 지정')+` +${S.desig*100}%`,won(pr)+'/필지'])}
+  let tot=pr*N;if(split)rows.push([`나눈 뒤 ${N}필지`,won(tot)]);
+  const rd=REDS.find(r=>r[0]===S.red);
+  if(rd[2]){tot=r1000(tot*(1-rd[2]));rows.push([`${rd[1]} ${rd[2]*100}% 감면`,won(tot)])}
   else{if(N>=3){tot=r1000(tot*.95);rows.push(['3필지 이상 5% 체감',won(tot)])}
        if(small){tot-=r1000(r1000(base*gk)*.1)*N;rows.push(['작은 땅 10% 감면',won(tot)])}}
   rows.push(['예상 수수료 (부가세 별도)',won(tot)]);
@@ -227,6 +239,7 @@ function renderContact(){
   $('contact').innerHTML=`<h3>우리 시·군·구 지적 담당</h3><p class="hint" style="margin:0">${S.parcel?esc(S.parcel.sgg||'이 지역')+' 연락처는 준비 중이에요. 시·군·구청 대표번호로 지적 담당을 찾아 주세요.':'지도에서 땅을 누르면 그 땅을 맡은 시·군·구 지적 부서를 알려 드려요.'}</p>`;
 }
 
+$('bReset').onclick=()=>{Object.assign(S,DEF);if(window.__hl)window.__hl.clearLayers();$('sQ').value='';tip('지도를 확대해서 내 땅을 눌러 주세요');render();document.querySelector('.side').scrollTop=0};
 render();
 function tip(t){document.getElementById('tip').textContent=t}
 // ───────── 지도 (브이월드) ─────────
@@ -241,7 +254,7 @@ let cur='base';layers.base.addTo(map);
 const CRS900913=L.extend({},L.CRS.EPSG3857,{code:'EPSG:900913'});
 if(KEY)L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:'lp_pa_cbnd_bubun',styles:'lp_pa_cbnd_bubun_line',format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:15,maxZoom:21,referrerPolicy:'no-referrer'}).addTo(map);
 $('bLayer').onclick=()=>{if(!layers.sat)return tip('위성 사진은 브이월드 키가 있어야 보여요');map.removeLayer(layers[cur]);cur=cur==='base'?'sat':'base';layers[cur].addTo(map).bringToBack();$('bLayer').textContent=cur==='base'?'위성':'일반'};
-const hl=L.layerGroup().addTo(map);
+const hl=L.layerGroup().addTo(map);window.__hl=hl;
 // 브이월드 API는 JSONP(스크립트 태그)로 부름
 let seq=0;
 function vw(path,params,ms=9000){return new Promise((res,rej)=>{
@@ -268,13 +281,23 @@ async function pick(lat,lon,pnuQ){
     S.area=Math.round(polyArea(polys));if(S.parcel.price)S.price=S.parcel.price;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ)map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});
-    tip(S.parcel.addr);render();
+    tip(S.parcel.addr);addHist(S.parcel,lat,lon);render();
     if(innerWidth<=860)document.querySelector('.side').scrollIntoView({behavior:'smooth'});
   }catch(e){tip(e.message)}
 }
 map.on('click',e=>pick(e.latlng.lat,e.latlng.lng));
 $('bMe').onclick=()=>{if(!navigator.geolocation)return tip('이 기기는 위치를 알 수 없어요');tip('내 위치를 찾는 중…');
   navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],18);tip('내 땅을 눌러 주세요')},()=>tip('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:10000})};
+// 최근 찾은 땅 (이 기기에만 저장)
+const HK='sg_hist';
+const hist=()=>{try{return JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){return []}};
+function addHist(p,lat,lon){try{const h=[{pnu:p.pnu,addr:p.addr,lat,lon},...hist().filter(x=>x.pnu!==p.pnu)].slice(0,10);localStorage.setItem(HK,JSON.stringify(h))}catch(e){}}
+function showHist(){const h=hist(),box=$('hits');if(!h.length){box.hidden=true;return}
+  box.hidden=false;box.innerHTML=`<div class="hh">최근 찾은 땅<button type="button" id="hClr">기록 지우기</button></div>`+h.map((x,i)=>`<button type="button" data-h="${i}">${esc(x.addr)}</button>`).join('');
+  box.onclick=ev=>{if(ev.target.id==='hClr'){localStorage.removeItem(HK);box.hidden=true;return}
+    const b=ev.target.closest('button[data-h]');if(!b)return;const x=h[+b.dataset.h];box.hidden=true;map.setView([x.lat,x.lon],18);pick(x.lat,x.lon,x.pnu)}}
+$('sQ').addEventListener('focus',()=>{if(!$('sQ').value.trim())showHist()});
+$('sQ').addEventListener('input',()=>{if(!$('sQ').value.trim())showHist();else $('hits').hidden=true});
 // 주소·지번 찾기 (브이월드 검색 API)
 $('sForm').onsubmit=async e=>{e.preventDefault();const q=$('sQ').value.trim();if(!q)return;
   if(!KEY)return tip('주소 찾기는 브이월드 키가 있어야 해요');
