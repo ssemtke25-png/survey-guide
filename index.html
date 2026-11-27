@@ -616,7 +616,7 @@ try{if(localStorage.getItem('sg_side')&&innerWidth>860)setSide(true)}catch(e){}
 const isSheet=()=>innerWidth<=860;let SHEET=0;
 function sheetPos(n){return n===2?'0px':n===1?'42svh':'calc(88svh - 112px)'}
 function setSheet(n){SHEET=n;if(!isSheet())return;const sd=$('side');sd.style.setProperty('--sy',sheetPos(n));
-  if(n===1&&S.parcel){const li=$('landInfo');sd.scrollTop=Math.max(0,li.offsetTop-li.previousElementSibling.offsetHeight-$('sheetHd').offsetHeight-14)}else if(n===0)sd.scrollTop=0}
+  if(n===1&&S.parcel){const li=$('landInfo');sd.scrollTop=Math.max(0,li.offsetTop-li.previousElementSibling.offsetHeight-$('sheetHd').offsetHeight-14)}else if(n===0||!S.parcel)sd.scrollTop=0}
 window.__setSheet=setSheet;
 function sheetHead(){const p=S.parcel;$('shTitle').textContent=p?p.addr:'지도에서 내 땅을 콕 눌러 보세요'}
 {const hd=$('sheetHd'),sd=$('side');let st=null;
@@ -628,6 +628,7 @@ function sheetHead(){const p=S.parcel;$('shTitle').textContent=p?p.addr:'지도�
       if(v>.6)setSheet(Math.max(0,SHEET===2?1:0));else if(v<-.6)setSheet(Math.min(2,SHEET+1));
       else{[[2,0],[1,H*.88-H*.42],[0,H*.88-112]].forEach(([n,y])=>{const d=Math.abs(ty-y);if(d<bd){bd=d;best=n}});setSheet(best)}}
     st=null});
+  if(isSheet())setTimeout(()=>{$('side').scrollTop=0},0);
   addEventListener('resize',()=>{if(!isSheet())$('side').style.removeProperty('--sy');else setSheet(SHEET)})}
 render();
 function tip(t){document.getElementById('tip').textContent=t}
@@ -809,7 +810,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
-    if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd)sd.scrollTo({top:0,behavior:'smooth'})}
+    if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
     ledger(S.parcel);
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
