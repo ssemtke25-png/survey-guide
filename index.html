@@ -174,7 +174,7 @@ $('kinds').innerHTML=KINDS.map(o=>`<button type="button" data-k="${o.k}"><b>${o.
 $('kinds').onclick=e=>{const b=e.target.closest('button');if(b){S.kind=b.dataset.k;render()}};
 function pBoxHTML(){
   const p=S.parcel;
-  const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${esc(p.jimok?('지목 '+p.jimok+' · '):'')}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년)':''):'자료 없음'}</div></div>`
+  const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${esc(p.jimok?('지목 '+p.jimok+' · '):'')}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     :`<div class="empty">지도에서 땅을 누르면 지번·공시지가·면적이 채워져요. 아래는 예시 값이에요.</div>`;
   const split=S.kind==='split';
   return `<div class="parcel">${head}
@@ -183,7 +183,7 @@ function pBoxHTML(){
     <button type="button" data-l="임야">산<small>지번 앞 '산'</small></button>
     <button type="button" data-l="수치">좌표 지역<small>구획정리 등</small></button></div>
   <div class="row2">
-    <label class="f" for="area">면적<span class="in"><input id="area" type="number" inputmode="decimal" min="1" value="${S.area}"><span>㎡</span></span><span class="hint">${p?'지도로 잰 값 · 대장과 다르면 고치세요':'약 '+Math.round(S.area/3.3058).toLocaleString()+'평'}</span></label>
+    <label class="f" for="area">면적<span class="in"><input id="area" type="number" inputmode="decimal" min="1" value="${S.area}"><span>㎡</span></span><span class="hint">${p?(p.areaSrc==='대장'?'토지대장 면적':p.areaSrc==='대기'?'대장 면적 가져오는 중…':'지도로 잰 값 · 대장과 다르면 고치세요'):'약 '+Math.round(S.area/3.3058).toLocaleString()+'평'}</span></label>
     <label class="f" for="price">공시지가<span class="in"><input id="price" type="number" inputmode="numeric" min="0" value="${S.price}"><span>원/㎡</span></span><span class="hint"><a href="https://www.realtyprice.kr" target="_blank" rel="noopener">공시가격 알리미</a></span></label>
   </div>
   ${split?`<label class="f" for="cnt">나눈 뒤 필지 수<span class="in"><input id="cnt" type="number" inputmode="numeric" min="2" value="${S.cnt}"><span>필지</span></span><span class="hint">면적은 똑같이 나눈다고 보고 계산해요.</span></label>`:''}
@@ -264,6 +264,28 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
   s.onerror=()=>{clearTimeout(t);delete window[cb];s.remove();rej(new Error('브이월드에 연결하지 못했어요'))};
   s.src=`https://api.vworld.kr/req/${path}?`+new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',errorformat:'json',callback:cb},params));
   document.head.appendChild(s)})}
+// 국가중점데이터(NED) : 토지대장 면적·지목, 최신 개별공시지가
+// 브라우저에서 바로(fetch) 부르고, 막히면 JSONP로 다시 부름
+async function ned(path,params){
+  const q=new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',numOfRows:'50',pageNo:'1'},params));
+  const url=`https://api.vworld.kr/ned/data/${path}?`;
+  try{const r=await fetch(url+q);if(r.ok)return await r.json()}catch(e){}
+  return new Promise((res,rej)=>{const cb='__ned'+(++seq),sc=document.createElement('script');q.set('callback',cb);
+    const t=setTimeout(()=>{window[cb]=()=>delete window[cb];sc.remove();rej(new Error('대장 응답 없음'))},8000);
+    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();res(d)};
+    sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();rej(new Error('대장 연결 실패'))};
+    sc.src=url+q;document.head.appendChild(sc)})}
+const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(const v of Object.values(o))deep(v,k,out)}return out};
+async function ledger(p){
+  const pnu=p.pnu,same=()=>S.parcel&&S.parcel.pnu===pnu;
+  const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
+      const a=parseFloat(it.lndpclAr);if(a>0){S.area=Math.round(a*10)/10;p.areaSrc='대장'}
+      if(it.lndcgrCodeNm)p.jimok=it.lndcgrCodeNm;}).catch(()=>{if(same())p.areaSrc='지도'});
+  const job2=ned('getIndvdLandPriceAttr',{pnu}).then(d=>{if(!same())return;
+      const L=deep(d,'pblntfPclnd').filter(x=>+x.pblntfPclnd>0).sort((a,b)=>(b.stdrYear+(b.stdrMt||'')).localeCompare(a.stdrYear+(a.stdrMt||'')));
+      if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}}).catch(()=>{});
+  await Promise.all([job1,job2]);if(same())render();
+}
 // 면적 (평면 근사, ㎡)
 function ringArea(r){const lat0=r[0][1]*Math.PI/180,kx=111320*Math.cos(lat0),ky=110574;let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]*kx)*(r[i][1]*ky)-(r[i][0]*kx)*(r[j][1]*ky);return Math.abs(a)/2}
 function polyArea(polys){return polys.reduce((s,p)=>s+ringArea(p[0])-p.slice(1).reduce((h,r)=>h+ringArea(r),0),0)}
@@ -278,10 +300,11 @@ async function pick(lat,lon,pnuQ){
     const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
     const pnu=String(pr.pnu||''),jb=String(pr.jibun||''),m=jb.match(/([가-힣])$/);
     S.parcel={pnu,addr:pr.addr||jb,jimok:m?m[1]:'',price:+pr.jiga||0,year:pr.gosi_year||'',sgg:(pr.addr||'').split(' ').slice(0,2).join(' ')};
-    S.area=Math.round(polyArea(polys));if(S.parcel.price)S.price=S.parcel.price;
+    S.area=Math.round(polyArea(polys));S.parcel.areaSrc='대기';if(S.parcel.price)S.price=S.parcel.price;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ)map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});
     tip(S.parcel.addr);addHist(S.parcel,lat,lon);render();
+    ledger(S.parcel);
     if(innerWidth<=860)document.querySelector('.side').scrollIntoView({behavior:'smooth'});
   }catch(e){tip(e.message)}
 }
