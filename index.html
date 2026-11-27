@@ -318,8 +318,8 @@ const ymd=v=>{v=String(v||'').replace(/[^0-9]/g,'');return v.length>=8?`${v.slic
 function bldHTML(b){return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">건축물대장 기준</span></div>`+
   b.slice(0,5).map(x=>`<div class="bl"><b>${esc(x.name||x.use||'건물')}</b>${x.name&&x.use?` <span>${esc(x.use)}</span>`:''}<div class="hint">${[x.year?'사용승인 '+x.year:'',x.area?'연면적 '+(+x.area).toLocaleString(undefined,{maximumFractionDigits:2})+'㎡ ('+Math.round(x.area*0.3025).toLocaleString()+'평)':'',x.fl?'지상 '+x.fl+'층'+(x.ufl&&+x.ufl?' · 지하 '+x.ufl+'층':''):'',x.str||''].filter(Boolean).join(' · ')}</div></div>`).join('')+
   (b.length>5?`<div class="hint">외 ${b.length-5}동</div>`:'')+`</div>`}
-function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d)}</td><td>${esc(x.why)}</td><td>${esc(x.jm||'')}</td><td style="text-align:right">${x.ar?(+x.ar).toLocaleString()+'㎡':''}</td></tr>`);
-  return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d)} ${esc(m[0].why)}</span></summary>
+function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x.why)}</td><td>${esc(x.jm||'')}</td><td style="text-align:right">${x.ar?(+x.ar).toLocaleString()+'㎡':''}</td></tr>`);
+  return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d?m[0].d+' ':'')}${esc(m[0].why)}</span></summary>
   <table><thead><tr><th>날짜</th><th>사유</th><th>지목</th><th style="text-align:right">면적</th></tr></thead><tbody>${rows.join('')}</tbody></table></details>`}
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
 const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'];
@@ -327,12 +327,15 @@ const PROBE=/[?&]probe=1/.test(location.search);
 async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
 async function extraInfo(p){const log=PROBE?[]:null;
-  const [b,m]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log)]);
-  if(b)p.bld=b.map(o=>({name:pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i]),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
+  let [b,m]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log)]);
+  if(b)p.bld=b.map(o=>({name:String(pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i])||'').replace(/^.*대장$/,'').trim(),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
     year:ymd(pickF(o,[/useConfm.*De$/i,/useApr.*/i,/confm.*De$/i,/^useYmd/i])),area:+pickF(o,[/^totar$/i,/tot.*Ar(ea)?$/i])||0,
     fl:pickF(o,[/^(grnd|ground).*(flr|floor)/i,/grndFlrCnt/i]),ufl:pickF(o,[/^(ugrnd|under).*(flr|floor)/i]),str:pickF(o,[/strct.*Nm$/i])})).filter(x=>x.name||x.use||x.year||x.area);
-  if(m)p.mv=m.map(o=>({d:ymd(o.ladMvmnDe),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
-    jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).sort((a,b)=>b.d.localeCompare(a.d));
+  if(m){const sn=o=>+(o.ladHistSn||0)*1e9+(+o.ladMvmnHistSn||0);m=m.slice().sort((a,b)=>sn(a)-sn(b));
+    // 이동일이 비어 있으면 바로 앞 이력의 말소일(= 이 상태가 시작된 날)로 채움
+    m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
+  if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
+    jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
   if(log)p.probe=log.join('\n\n')}
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
