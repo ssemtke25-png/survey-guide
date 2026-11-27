@@ -1,7 +1,7 @@
 {
- "name": "땅 측량 길잡이",
- "short_name": "땅 길잡이",
- "description": "지도에서 땅을 누르면 공시지가·용도지역과 측량 수수료, 신청 방법을 알려 드려요.",
+ "name": "내땅 보이소",
+ "short_name": "내땅 보이소",
+ "description": "지도에서 내 땅을 콕 누르면 공시지가·용도지역·측량 수수료와 신청하는 곳까지 알려 드려요.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

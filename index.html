@@ -3,14 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>땅 측량 길잡이</title>
-<meta name="description" content="지도에서 내 땅을 누르면 어떤 측량이 필요한지, 예상 수수료와 신청 방법을 알려 드립니다.">
+<title>내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료</title>
+<meta name="description" content="내땅 보이소 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
+<meta name="keywords" content="내땅 보이소,내땅보이소,땅 측량 길잡이,지적측량 수수료,경계복원측량 비용,분할측량 비용,측량 수수료 계산,공시지가 조회,용도지역 확인,LX 지사">
+<!-- 네이버 서치어드바이저 소유 확인 코드 : 받은 코드로 아래 줄의 content 값을 바꾸세요 -->
+<meta name="naver-site-verification" content="">
+<link rel="canonical" href="https://ssemtke25-png.github.io/survey-guide/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="내땅 보이소">
+<meta property="og:title" content="내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료">
+<meta property="og:description" content="지도에서 내 땅을 누르면 공시지가, 용도지역, 지적측량 예상 수수료와 신청하는 곳까지 알려 드려요.">
+<meta property="og:url" content="https://ssemtke25-png.github.io/survey-guide/">
+<meta property="og:image" content="https://ssemtke25-png.github.io/survey-guide/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#17203a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="땅 길잡이">
+<meta name="apple-mobile-web-app-title" content="내땅 보이소">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
@@ -67,7 +79,7 @@ h2{font-size:16px;margin:18px 0 8px}
 .uo{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}.uo span{background:var(--panel);border-radius:999px;padding:2px 8px;font-size:12.5px}
 .drawbtn{width:100%;padding:10px;border:1.5px dashed var(--blue);border-radius:12px;background:#eef3ff;color:var(--blue);font-weight:700;cursor:pointer;font-size:14.5px}
 .spbar{position:absolute;z-index:520;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));max-width:520px;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.spbar span{flex:1 1 100%}.spbar button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.spbar .save{background:var(--red)}.spbar .lite{background:var(--panel);color:var(--ink)}.spbar small{flex:1 1 100%;font-weight:400;color:var(--red);font-size:12px}
+.spbar[hidden]{display:none!important}.spbar span{flex:1 1 100%;padding-right:22px}.spbar .spx{position:absolute;top:4px;right:6px;background:none!important;color:var(--mut)!important;font-size:20px;padding:0 6px!important}.spbar button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.spbar .save{background:var(--red)}.spbar .lite{background:var(--panel);color:var(--ink)}.spbar small{flex:1 1 100%;font-weight:400;color:var(--red);font-size:12px}
 .splabw{background:none;border:0}.splab{position:absolute;left:0;top:0;transform:translate(-50%,-50%);background:rgba(255,255,255,.92);border:1.5px solid #111;border-radius:8px;padding:2px 7px;font-size:13px;font-weight:700;white-space:nowrap}
 .sphandle{background:#fff;border:3px solid #111;border-radius:50%;box-sizing:border-box}
 .qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:3px;border-radius:50%;border:1.5px solid var(--blue);background:#fff;color:var(--blue);font-size:11.5px;font-weight:900;cursor:pointer;padding:0;vertical-align:1px;line-height:1}
@@ -76,8 +88,11 @@ h2{font-size:16px;margin:18px 0 8px}
 .bigtext .side{zoom:1.2}.bigtext .gbub{font-size:16px}
 .parts small{color:var(--mut);font-size:11px}
 .splab small{font-weight:400;color:var(--mut)}
-.legend{position:absolute;z-index:500;right:12px;top:calc(100px + env(safe-area-inset-top));max-width:46%;max-height:45%;overflow:auto;background:rgba(255,255,255,.95);border:1.5px solid var(--line);border-radius:12px;padding:6px 8px;font-size:12px}.legend b{display:block;font-size:12.5px}.legend img{max-width:100%;display:block}.legend small{color:var(--mut);display:block}
+.legend{position:absolute;z-index:500;right:12px;top:calc(100px + env(safe-area-inset-top));max-width:46%;max-height:45%;overflow:auto;background:rgba(255,255,255,.95);border:1.5px solid var(--line);border-radius:12px;padding:6px 8px;font-size:12px}.lghd{display:flex;justify-content:space-between;align-items:center;gap:6px;cursor:grab;touch-action:none;font-weight:700;font-size:12px;color:var(--ink);padding:2px 0 4px;border-bottom:1px solid var(--line);margin-bottom:4px;user-select:none}.lghd button{border:0;background:var(--panel);border-radius:6px;font-size:11.5px;padding:2px 6px;cursor:pointer}.legend.fold .lgbd{display:none}.legend.fold{max-height:none}
+.legend b{display:block;font-size:12.5px}.legend img{max-width:100%;display:block}.legend small{color:var(--mut);display:block}
 .idpop .leaflet-popup-content{margin:10px 12px;font-size:14px;line-height:1.45}.idpop span{display:block;color:var(--mut);font-size:12px}.idpop b{display:block;margin-bottom:4px}.idpop small{color:var(--red)}
+.faq h4{margin:12px 0 2px;font-size:14.5px}.faq p{margin:0;font-size:14px;color:var(--mut)}.faq summary{cursor:pointer}
+.road{font-size:13.5px;color:var(--ink);margin-top:1px}
 .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:3px}.parts .pn{padding-left:10px;color:var(--mut);font-size:13px}
 .reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
 .reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
@@ -132,12 +147,12 @@ tr.sum td{font-weight:900}
   <div class="mapwrap">
     <div id="map" aria-label="지적도 지도"></div>
     <form class="search" id="sForm" role="search">
-      <input id="sQ" type="search" placeholder="주소나 지번 (예: 상주시 무양동 100)" autocomplete="off" aria-label="주소 검색">
+      <input id="sQ" type="search" placeholder="주소나 지번 (예: 안동시 풍천면 갈전리 1155)" autocomplete="off" aria-label="주소 검색">
       <button type="submit">찾기</button>
     </form>
     <div class="hits" id="hits" hidden></div>
     <div class="refmark">참고도면 · 실제 경계와 다를 수 있음</div>
-    <div class="spbar" id="spbar" hidden><span id="spmsg"></span><button type="button" id="spEnd" class="save">선 끝내기</button><button type="button" id="spUndo" class="lite">한 점 취소</button><button type="button" id="spAdd">선 더 긋기</button><button type="button" id="spSave" class="save" hidden>저장</button><button type="button" id="spClr" class="lite">지우기</button><small>참고용 면적이에요. 실제 면적은 측량으로 정해져요.</small></div>
+    <div class="spbar" id="spbar" hidden><button type="button" id="spX" class="spx" aria-label="닫기">×</button><span id="spmsg"></span><button type="button" id="spEnd" class="save">선 끝내기</button><button type="button" id="spUndo" class="lite">한 점 취소</button><button type="button" id="spAdd">선 더 긋기</button><button type="button" id="spSave" class="save" hidden>저장</button><button type="button" id="spClr" class="lite">지우기</button><small>참고용 면적이에요. 실제 면적은 측량으로 정해져요.</small></div>
     <div class="tip" id="tip">지도를 확대해서 내 땅을 눌러 주세요</div>
     <div class="legend" id="legend" hidden></div>
     <div class="fabs">
@@ -148,8 +163,8 @@ tr.sum td{font-weight:900}
     </div>
   </div>
   <div class="side">
-    <div class="toprow"><h1>땅 측량 길잡이</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
-    <p class="sub">지도에서 내 땅을 누르면 필요한 측량과 예상 수수료, 신청 방법을 알려 드려요.</p>
+    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
+    <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
 
     <h2>1. 무슨 일로 측량하세요?</h2>
@@ -185,6 +200,13 @@ tr.sum td{font-weight:900}
         <li>LX 고객센터 <a href="tel:15887704">1588-7704</a></li>
       </ul>
     </div>
+    <details class="box faq"><summary><h3 style="display:inline">자주 묻는 질문</h3></summary>
+      <h4>지적측량 수수료는 어떻게 정해지나요?</h4><p>국토교통부가 매년 고시하는 지적측량수수료 단가에 땅 면적(면적계수)과 개별공시지가(지가계수)를 반영해 정해요. 경계복원·분할·지적현황·도시계획선명시측량은 공시지가에 따라, 등록전환측량은 군·시·구 지역에 따라 단가가 달라요.</p>
+      <h4>경계복원측량은 언제 하나요?</h4><p>이웃 땅과 경계가 어디인지 확인하고 싶을 때, 담장이나 건물을 짓기 전에 해요. 측량한 경계점에는 경계점표지(말뚝)를 박아요.</p>
+      <h4>분할측량은 언제 하나요?</h4><p>땅을 나눠 팔거나 상속·증여할 때 해요. 측량 전에 시·군·구에 분할이 가능한지 먼저 물어보세요.</p>
+      <h4>지도의 선이 실제 경계인가요?</h4><p>아니에요. 지도의 선은 연속지적도로 참고용이에요. 실제 경계는 지적측량으로만 확인할 수 있어요.</p>
+      <h4>측량은 어디에 신청하나요?</h4><p>땅이 있는 곳의 한국국토정보공사(LX) 지사, 시·군·구청 민원실, 또는 LX 지적측량신청포털에서 인터넷으로 신청할 수 있어요.</p>
+    </details>
     <p class="foot">경상북도 토지정보과 · 근거: 2026년 지적측량수수료 고시(국토교통부 고시 제2025-896호), 「지적측량수수료 산정기준 등에 관한 규정」 · 지도·공시지가: 브이월드</p>
   </div>
 </div>
@@ -274,7 +296,7 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
   <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
 function pBoxHTML(){
   const p=S.parcel;
-  const head=p?`<div><div class="addr">${esc(p.addr)}</div><div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+  const head=p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     :`<div class="empty">지도에서 땅을 누르면 지번·공시지가·면적이 채워져요. 아래는 예시 값이에요.</div>`;
@@ -325,6 +347,7 @@ function bindInputs(){
   if($('desig'))$('desig').onclick=e=>{const b=e.target.closest('button');if(b){S.desig=+b.dataset.d;render()}};
 }
 function render(){
+  if(window.__split){const multi=S.kind==='split'||(S.kind==='stat'&&S.st==='area');if(!multi&&(window.__split.lines.length||window.__split.on))window.__split.clear()}
   for(const b of $('kinds').children)b.setAttribute('aria-pressed',b.dataset.k===S.kind);
   $('pBox').innerHTML=pBoxHTML();bindInputs();
   for(const b of $('lands').children)b.setAttribute('aria-pressed',b.dataset.l===S.land);
@@ -470,7 +493,7 @@ function applyShare(q){const n=x=>+q.get(x);
   if(q.get('d'))S.desig=n('d');if(q.get('r'))S.red=q.get('r');if(q.get('i')==='0')S.indiv=false}
 let PENDING=null;
 $('bShare').onclick=async()=>{const url=shareURL(),r=compute(S),t=`${S.parcel?S.parcel.addr+' ':''}${r.K.n} 예상 수수료 ${won(r.all)} (부가세 포함)`;
-  try{if(navigator.share){await navigator.share({title:'땅 측량 길잡이',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{if(navigator.share){await navigator.share({title:'내땅 보이소',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
   try{await navigator.clipboard.writeText(t+'\n'+url);tip('링크를 복사했어요. 카톡에 붙여 넣으세요')}catch(e){prompt('이 링크를 복사하세요',url)}};
 // ───────── 민원실용 요약 ─────────
 function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function'?findLX(p.addr):null,A=p?areaName(p.addr):null;
@@ -481,9 +504,9 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
   if(S.red==='merit')need.push('국가유공자 확인서 또는 장애인증명서');if(S.red==='dis')need.push('피해사실확인서');
   if(S.kind==='split')need.push('분할 허가가 필요한 땅이면 허가 관련 서류');if(S.kind==='conv')need.push('산지전용·개발행위 허가서 또는 준공 서류');
   let bk='';if(BASKET.length){const B=basketCalc();bk=`<h3>담은 땅 ${BASKET.length}건 합계 ${won(B.all)} (부가세 포함)</h3><ul>${B.items.map(x=>`<li>${esc(x.it.parcel?x.it.parcel.addr:'직접 입력')} · ${esc(x.r.K.n)} · ${won(Math.round(x.tot*1.1))}</li>`).join('')}</ul>`}
-  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 땅 측량 길잡이에서 계산한 참고용 예상 금액이에요</div>
+  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 내땅 보이소에서 계산한 참고용 예상 금액이에요</div>
   <table><tbody>
-   <tr><td>땅</td><td><b>${esc(p?p.addr:'직접 입력한 땅')}</b></td></tr>
+   <tr><td>땅</td><td><b>${esc(p?p.addr:'직접 입력한 땅')}</b>${p&&p.road?`<br>도로명 ${esc(p.road)}`:''}</td></tr>
    ${p&&p.jimok?`<tr><td>지목</td><td>${esc(p.jimok)}</td></tr>`:''}
    <tr><td>면적</td><td>${S.area.toLocaleString()}㎡ (약 ${Math.round(S.area/3.3058).toLocaleString()}평)</td></tr>
    ${S.kind!=='conv'?`<tr><td>공시지가</td><td>${S.price.toLocaleString()}원/㎡${p&&p.year?' ('+esc(p.year)+'년)':''}</td></tr>`:''}
@@ -531,7 +554,14 @@ function ovl(name,lays){if(!KEY)return null;const L2=lays.join(',');return L.til
 OVL.use=ovl('용도지역',['lt_c_uq111','lt_c_uq112','lt_c_uq113','lt_c_uq114']);
 OVL.plan=ovl('도시계획',['lt_c_upisuq151','lt_c_upisuq152','lt_c_upisuq153','lt_c_upisuq154','lt_c_upisuq155','lt_c_upisuq156','lt_c_upisuq157','lt_c_upisuq158','lt_c_upisuq159']);
 function legend(){const box=$('legend');if(!box)return;const ks=[];if(isOn('bUse'))ks.push(['용도지역','lt_c_uq111']);if(isOn('bPlan'))ks.push(['도시계획(도로)','lt_c_upisuq151']);
-  box.hidden=!ks.length;box.innerHTML=ks.map(([t,l])=>`<div><b>${t}</b><img alt="${t} 범례" src="https://api.vworld.kr/req/image?service=image&request=GetLegendGraphic&format=png&type=ALL&layer=${l}&style=${l}&key=${encodeURIComponent(KEY)}&domain=${encodeURIComponent(DOMAIN)}" onerror="this.replaceWith(Object.assign(document.createElement('small'),{textContent:'지도를 눌러 이름을 확인하세요'}))"></div>`).join('')+'<small>지도를 누르면 그 자리 이름이 떠요</small>'}
+  box.hidden=!ks.length;box.innerHTML='<div class="lghd"><span>⠿ 범례 · 끌어서 옮기기</span><button type="button" id="lgFold">접기</button></div><div class="lgbd">'+ks.map(([t,l])=>`<div><b>${t}</b><img alt="${t} 범례" src="https://api.vworld.kr/req/image?service=image&request=GetLegendGraphic&format=png&type=ALL&layer=${l}&style=${l}&key=${encodeURIComponent(KEY)}&domain=${encodeURIComponent(DOMAIN)}" onerror="this.replaceWith(Object.assign(document.createElement('small'),{textContent:'지도를 눌러 이름을 확인하세요'}))"></div>`).join('')+'<small>지도를 누르면 그 자리 이름이 떠요</small></div>';
+  $('lgFold').onclick=e=>{e.stopPropagation();box.classList.toggle('fold');$('lgFold').textContent=box.classList.contains('fold')?'펴기':'접기'}}
+// 범례 끌어 옮기기 (마우스·손가락)
+{const box=$('legend');let st=null;
+  box.addEventListener('pointerdown',e=>{if(!e.target.closest('.lghd')||e.target.closest('button'))return;const r=box.getBoundingClientRect(),pr=box.parentNode.getBoundingClientRect();st={x:e.clientX,y:e.clientY,l:r.left-pr.left,t:r.top-pr.top,pw:pr.width,ph:pr.height,w:r.width,h:r.height};box.setPointerCapture(e.pointerId);e.preventDefault()});
+  box.addEventListener('pointermove',e=>{if(!st)return;const l=Math.max(0,Math.min(st.pw-st.w,st.l+e.clientX-st.x)),t=Math.max(0,Math.min(st.ph-40,st.t+e.clientY-st.y));Object.assign(box.style,{left:l+'px',top:t+'px',right:'auto'})});
+  box.addEventListener('pointerup',()=>st=null);
+  L.DomEvent.disableClickPropagation(box);L.DomEvent.disableScrollPropagation(box)}
 function setOv(k,on){const l=OVL[k],b=$(k==='use'?'bUse':'bPlan');if(!l)return tip('겹쳐 보기는 브이월드 키가 있어야 해요');
   if(on){l.addTo(map);l.bringToBack();if(layers[cur])layers[cur].bringToBack();if(map.getZoom()<12)map.setZoom(15)}else map.removeLayer(l);b.setAttribute('aria-pressed',on);
   legend();if(on)tip(k==='use'?'용도지역을 칠했어요. 지도를 누르면 이름이 떠요':'도시계획시설을 겹쳤어요. 지도를 누르면 이름이 떠요')}
@@ -574,8 +604,9 @@ async function ledger(p){
   const pnu=p.pnu,same=()=>S.parcel&&S.parcel.pnu===pnu;
   const c=lcGet(pnu);
   if(c){if(c.area){S.area=c.area;S.partsEdited=false;p.areaSrc='대장'}else p.areaSrc='지도';
-    for(const k of ['jimok','scale','price','year','hist','uses'])if(c[k]!=null)p[k]=c[k];
+    for(const k of ['jimok','scale','price','year','hist','uses','road'])if(c[k]!=null)p[k]=c[k];
     if(c.price)S.price=c.price;if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}
+    if(!p.road)roadAddr(p).then(()=>{if(S.parcel===p&&p.road){lcPut(pnu,Object.assign({},c,{road:p.road}));render()}});
     if(PENDING){applyShare(PENDING);PENDING=null}render();return}
   const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
       const a=parseFloat(it.lndpclAr);if(a>0){S.area=Math.round(a*10)/10;S.partsEdited=false;p.areaSrc='대장'}
@@ -588,10 +619,14 @@ async function ledger(p){
       const L=deep(d,'pblntfPclnd').filter(x=>+x.pblntfPclnd>0).sort((a,b)=>(b.stdrYear+(b.stdrMt||'')).localeCompare(a.stdrYear+(a.stdrMt||'')));
       if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}
       const H={};for(const x of L){const y=String(x.stdrYear||'');if(y&&!(y in H))H[y]=+x.pblntfPclnd}p.hist=Object.keys(H).sort().map(y=>[y,H[y]]).slice(-10)}).catch(()=>{});
-  const job3=landUse(p).catch(()=>{});
-  await Promise.all([job1,job2,job3]);if(same()){lcPut(pnu,{area:p.areaSrc==='대장'?S.area:0,jimok:p.jimok,scale:p.scale,price:p.price,year:p.year,hist:p.hist,uses:p.uses});if(PENDING){applyShare(PENDING);PENDING=null}render()}
+  const job3=landUse(p).catch(()=>{}),job4=roadAddr(p).catch(()=>{});
+  await Promise.all([job1,job2,job3,job4]);if(same()){lcPut(pnu,{area:p.areaSrc==='대장'?S.area:0,jimok:p.jimok,scale:p.scale,price:p.price,year:p.year,hist:p.hist,uses:p.uses,road:p.road});if(PENDING){applyShare(PENDING);PENDING=null}render()}
 }
 // 용도지역·지구 : 토지이용계획(NED) → 안 되면 용도지역 도면(2D 데이터)에서 찾기
+// 도로명주소 (브이월드 주소 API, 땅 가운데 점 기준)
+async function roadAddr(p){if(!p.center)return;const [lat,lon]=p.center;
+  try{const d=await vw('address',{service:'address',request:'getAddress',version:'2.0',crs:'EPSG:4326',point:`${lon.toFixed(7)},${lat.toFixed(7)}`,type:'road',simple:'false'});
+    const r=d&&d.response&&d.response.result;const t=Array.isArray(r)&&r[0]&&r[0].text;if(t)p.road=String(t)}catch(e){}}
 async function landUse(p){
   try{const d=await ned('getLandUseAttr',{pnu:p.pnu,numOfRows:'100'});
     const L=deep(d,'prposAreaDstrcCodeNm');if(L.length){const seen=new Set(),u=[];
@@ -679,10 +714,10 @@ function snap(ll){const g=window.__geom;if(!g)return ll;const P=g.type==='Polygo
   for(const poly of P)for(const r of poly)for(const c of r){const q=map.latLngToContainerPoint([c[1],c[0]]),d=pt.distanceTo(q);if(d<bd){bd=d;best=L.latLng(c[1],c[0])}}
   for(const ln of SP.lines)for(const c of ln){const d=pt.distanceTo(map.latLngToContainerPoint(c));if(d<bd){bd=d;best=L.latLng(c.lat,c.lng)}}return best||ll}
 function btn(id,show,txt){const b=$(id);b.hidden=!show;if(txt)b.textContent=txt}
-function updBar(n){const b=$('spbar');if(!b)return;b.hidden=!SP.on&&!SP.lines.length;
+function updBar(n){const b=$('spbar');if(!b)return;const multi=S.kind==='split'||(S.kind==='stat'&&S.st==='area');b.hidden=!multi||SP.hid||(!SP.on&&!SP.lines.length);
   $('spmsg').textContent=SP.locked?`저장했어요 · ${n}필지 면적이 오른쪽 칸에 들어갔어요`
     :SP.on?(SP.cur.length?`점을 이어 찍어 주세요 · 끝내려면 더블클릭 또는 '선 끝내기'${n>=2?` (지금 ${n}조각)`:''}`:'선의 시작점을 찍어 주세요 · 땅 바깥이나 모서리에서 시작해요')
-    :`${n}조각으로 나눴어요 · 점을 끌어 옮길 수 있어요`;
+    :n>=2?`${n}조각으로 나눴어요 · 점을 끌어 옮길 수 있어요`:'선이 땅을 가로지르지 않았어요. 지우고 다시 그어 주세요';
   btn('spEnd',SP.on,'선 끝내기');btn('spUndo',SP.on&&SP.cur.length>0,'한 점 취소');
   btn('spAdd',!SP.on&&!SP.locked,'선 더 긋기');btn('spSave',!SP.on&&SP.lines.length>0,SP.locked?'수정하기':'저장');btn('spClr',!SP.on||SP.lines.length>0,SP.on&&!SP.lines.length?'취소':'지우기')}
 function finish(){if(SP.cur.length>=2)SP.lines.push(SP.cur.slice());SP.cur=[];SP.hover=null;SP.on=false;map.doubleClickZoom.enable();redraw()}
@@ -691,10 +726,12 @@ map.on('mousemove',e=>{if(SP.on&&SP.cur.length){SP.hover=snap(e.latlng);redrawSo
 map.on('dblclick',e=>{if(SP.on){L.DomEvent.stop(e);finish()}});
 map.on('contextmenu',e=>{if(SP.on){finish()}});
 document.addEventListener('keydown',e=>{if(!SP.on)return;if(e.key==='Escape'||e.key==='Enter'){finish()}else if(e.key==='Backspace'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();SP.cur.pop();redraw()}});
-SP.start=()=>{if(!window.__geom)return tip('먼저 지도에서 땅을 눌러 주세요');if(!window.polygonClipping)return tip('분할 기능을 불러오지 못했어요. 새로고침해 주세요');
+SP.hide=()=>{SP.hid=true;updBar(0)};
+SP.start=()=>{SP.hid=false;if(!window.__geom)return tip('먼저 지도에서 땅을 눌러 주세요');if(!window.polygonClipping)return tip('분할 기능을 불러오지 못했어요. 새로고침해 주세요');
   SP.on=true;SP.cur=[];SP.hover=null;SP.locked=false;map.doubleClickZoom.disable();map.fitBounds(L.geoJSON(window.__geom).getBounds(),{padding:[70,70],maxZoom:20});redraw();tip('여러 번 찍어 선을 긋고, 더블클릭으로 끝내요')};
 SP.clear=()=>{SP.on=false;SP.cur=[];SP.hover=null;SP.locked=false;SP.lines=[];SP.layer.clearLayers();map.doubleClickZoom.enable();if(S.fromDraw){S.fromDraw=false;S.partsEdited=false}updBar(0)};
 $('spEnd').onclick=finish;
+$('spX').onclick=()=>{if(SP.on){SP.on=false;SP.cur=[];SP.hover=null;map.doubleClickZoom.enable();redraw()}SP.hide()};
 $('spUndo').onclick=()=>{SP.cur.pop();redraw()};
 $('spAdd').onclick=()=>SP.start();
 $('spSave').onclick=()=>{if(SP.locked){SP.locked=false;redraw();return}SP.locked=true;redraw();tip('분할 면적을 저장했어요');if(innerWidth<=860&&$('parts'))$('parts').scrollIntoView({behavior:'smooth',block:'center'})};
