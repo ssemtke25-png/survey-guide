@@ -76,6 +76,8 @@ h2{font-size:16px;margin:18px 0 8px}
 .bigtext .side{zoom:1.2}.bigtext .gbub{font-size:16px}
 .parts small{color:var(--mut);font-size:11px}
 .splab small{font-weight:400;color:var(--mut)}
+.legend{position:absolute;z-index:500;right:12px;top:calc(100px + env(safe-area-inset-top));max-width:46%;max-height:45%;overflow:auto;background:rgba(255,255,255,.95);border:1.5px solid var(--line);border-radius:12px;padding:6px 8px;font-size:12px}.legend b{display:block;font-size:12.5px}.legend img{max-width:100%;display:block}.legend small{color:var(--mut);display:block}
+.idpop .leaflet-popup-content{margin:10px 12px;font-size:14px;line-height:1.45}.idpop span{display:block;color:var(--mut);font-size:12px}.idpop b{display:block;margin-bottom:4px}.idpop small{color:var(--red)}
 .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:3px}.parts .pn{padding-left:10px;color:var(--mut);font-size:13px}
 .reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
 .reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
@@ -137,6 +139,7 @@ tr.sum td{font-weight:900}
     <div class="refmark">참고도면 · 실제 경계와 다를 수 있음</div>
     <div class="spbar" id="spbar" hidden><span id="spmsg"></span><button type="button" id="spEnd" class="save">선 끝내기</button><button type="button" id="spUndo" class="lite">한 점 취소</button><button type="button" id="spAdd">선 더 긋기</button><button type="button" id="spSave" class="save" hidden>저장</button><button type="button" id="spClr" class="lite">지우기</button><small>참고용 면적이에요. 실제 면적은 측량으로 정해져요.</small></div>
     <div class="tip" id="tip">지도를 확대해서 내 땅을 눌러 주세요</div>
+    <div class="legend" id="legend" hidden></div>
     <div class="fabs">
       <button class="fab alt ov" id="bUse" type="button" aria-pressed="false">용도지역</button>
       <button class="fab alt ov" id="bPlan" type="button" aria-pressed="false">도시계획</button>
@@ -527,9 +530,11 @@ const OVL={};
 function ovl(name,lays){if(!KEY)return null;const L2=lays.join(',');return L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:L2,styles:L2,format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:12,maxZoom:21,opacity:.55,referrerPolicy:'no-referrer',attribution:'브이월드 '+name})}
 OVL.use=ovl('용도지역',['lt_c_uq111','lt_c_uq112','lt_c_uq113','lt_c_uq114']);
 OVL.plan=ovl('도시계획',['lt_c_upisuq151','lt_c_upisuq152','lt_c_upisuq153','lt_c_upisuq154','lt_c_upisuq155','lt_c_upisuq156','lt_c_upisuq157','lt_c_upisuq158','lt_c_upisuq159']);
+function legend(){const box=$('legend');if(!box)return;const ks=[];if(isOn('bUse'))ks.push(['용도지역','lt_c_uq111']);if(isOn('bPlan'))ks.push(['도시계획(도로)','lt_c_upisuq151']);
+  box.hidden=!ks.length;box.innerHTML=ks.map(([t,l])=>`<div><b>${t}</b><img alt="${t} 범례" src="https://api.vworld.kr/req/image?service=image&request=GetLegendGraphic&format=png&type=ALL&layer=${l}&style=${l}&key=${encodeURIComponent(KEY)}&domain=${encodeURIComponent(DOMAIN)}" onerror="this.replaceWith(Object.assign(document.createElement('small'),{textContent:'지도를 눌러 이름을 확인하세요'}))"></div>`).join('')+'<small>지도를 누르면 그 자리 이름이 떠요</small>'}
 function setOv(k,on){const l=OVL[k],b=$(k==='use'?'bUse':'bPlan');if(!l)return tip('겹쳐 보기는 브이월드 키가 있어야 해요');
   if(on){l.addTo(map);l.bringToBack();if(layers[cur])layers[cur].bringToBack();if(map.getZoom()<12)map.setZoom(15)}else map.removeLayer(l);b.setAttribute('aria-pressed',on);
-  if(on)tip(k==='use'?'용도지역을 색으로 칠했어요 (참고용)':'도시계획도로·시설을 겹쳤어요 (참고용)')}
+  legend();if(on)tip(k==='use'?'용도지역을 칠했어요. 지도를 누르면 이름이 떠요':'도시계획시설을 겹쳤어요. 지도를 누르면 이름이 떠요')}
 $('bUse').onclick=()=>setOv('use',$('bUse').getAttribute('aria-pressed')!=='true');
 $('bPlan').onclick=()=>setOv('plan',$('bPlan').getAttribute('aria-pressed')!=='true');
 window.__planOn=()=>{if(OVL.plan&&$('bPlan').getAttribute('aria-pressed')!=='true')setOv('plan',true)};
@@ -620,7 +625,20 @@ async function pick(lat,lon,pnuQ){
     if(innerWidth<=860)document.querySelector('.side').scrollIntoView({behavior:'smooth'});
   }catch(e){tip(e.message)}
 }
-map.on('click',e=>{if(window.__split&&window.__split.on)return window.__split.tap(e.latlng);pick(e.latlng.lat,e.latlng.lng)});
+map.on('click',e=>{if(window.__split&&window.__split.on)return window.__split.tap(e.latlng);pick(e.latlng.lat,e.latlng.lng);identify(e.latlng)});
+// 겹쳐 보기를 켠 상태에서 누른 자리의 용도지역·도시계획 이름을 말풍선으로
+const isOn=id=>$(id)&&$(id).getAttribute('aria-pressed')==='true';
+const SKIP=/sido|sigg|sgg|emd|addr|code|cd$|_cd|id$|date|dt$|ymd|bjd|pnu|gid|seq|no$|area|ar$|len|shape/i;
+function hangulAttrs(f){const out=[];for(const [k,v] of Object.entries(f||{})){if(typeof v!=='string'||!/[가-힣]/.test(v)||SKIP.test(k))continue;const t=v.trim();if(t&&!out.includes(t))out.push(t)}return out}
+async function idLayers(ll,lays){const names=[];
+  await Promise.all(lays.map(async lay=>{try{const d=await vw('data',{service:'data',version:'2.0',request:'getfeature',data:lay,geomfilter:`POINT(${ll.lng.toFixed(7)} ${ll.lat.toFixed(7)})`,size:'5',geometry:'false',attribute:'true',crs:'EPSG:4326'});
+    const fs=deep(d,'properties').map(x=>x.properties);for(const p of fs){const n=p.uname||p.dgm_nm||p.dgmNm||hangulAttrs(p)[0];if(n&&!names.includes(n))names.push(n)}}catch(e){}}));return names}
+async function identify(ll){if(!KEY)return;const U=isOn('bUse'),Pn=isOn('bPlan');if(!U&&!Pn)return;
+  const pop=L.popup({maxWidth:260,className:'idpop'}).setLatLng(ll).setContent('이 자리 정보를 찾는 중…').openOn(map);
+  const [u,pl]=await Promise.all([U?idLayers(ll,['LT_C_UQ111','LT_C_UQ112','LT_C_UQ113','LT_C_UQ114']):[],Pn?idLayers(ll,['LT_C_UPISUQ151','LT_C_UPISUQ152','LT_C_UPISUQ153','LT_C_UPISUQ154','LT_C_UPISUQ155','LT_C_UPISUQ156','LT_C_UPISUQ157','LT_C_UPISUQ158','LT_C_UPISUQ159']):[]]);
+  let h='';if(U)h+=`<div><span>용도지역</span><b>${u.length?u.map(esc).join(', '):'정보 없음'}</b></div>`;
+  if(Pn)h+=`<div><span>도시계획시설</span><b>${pl.length?pl.map(esc).join(', '):'이 자리에는 없어요'}</b></div>`;
+  pop.setContent(h+'<small>참고용이에요</small>')}
 // ───────── 지도에서 분할선 긋기 (참고용) ─────────
 // 카카오맵 면적 재기처럼 : 여러 번 찍어 꺾인 선 → 더블클릭·'선 끝내기'로 마침, 선이 마우스를 따라옴
 {
