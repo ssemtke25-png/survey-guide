@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>땅 측량 길잡이</title>
-<meta name="description" content="땅 측량 길잡이 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
-<meta name="keywords" content="땅 측량 길잡이,지적측량 수수료,경계복원측량 비용,분할측량 비용,측량 수수료 계산,공시지가 조회,용도지역 확인,LX 지사">
+<title>내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료</title>
+<meta name="description" content="내땅 보이소 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
+<meta name="keywords" content="내땅 보이소,내땅보이소,땅 측량 길잡이,지적측량 수수료,경계복원측량 비용,분할측량 비용,측량 수수료 계산,공시지가 조회,용도지역 확인,LX 지사">
 <!-- 네이버 서치어드바이저 소유 확인 코드 : 받은 코드로 아래 줄의 content 값을 바꾸세요 -->
 <meta name="naver-site-verification" content="">
 <link rel="canonical" href="https://ssemtke25-png.github.io/survey-guide/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="땅 측량 길잡이">
-<meta property="og:title" content="땅 측량 길잡이 - 공시지가·용도지역·측량 수수료를 지도에서 한 번에">
+<meta property="og:site_name" content="내땅 보이소">
+<meta property="og:title" content="내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료">
 <meta property="og:description" content="지도에서 내 땅을 누르면 공시지가, 용도지역, 지적측량 예상 수수료와 신청하는 곳까지 알려 드려요.">
 <meta property="og:url" content="https://ssemtke25-png.github.io/survey-guide/">
 <meta property="og:image" content="https://ssemtke25-png.github.io/survey-guide/og.png">
@@ -22,7 +22,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="땅 길잡이">
+<meta name="apple-mobile-web-app-title" content="내땅 보이소">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
@@ -37,7 +37,7 @@ button,input{font:inherit}
 .side{overflow-y:auto;border-left:1px solid var(--line);padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
 h1{font-size:28px;font-weight:900;letter-spacing:-.02em;margin:0}
 .sub{color:var(--mut);font-size:14px;margin:2px 0 14px}
-h2{font-size:16px;margin:18px 0 8px}
+h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;color:var(--mut);margin-left:4px}.infobox{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}.infobox .addr{font-weight:900;font-size:18px}.infobox .meta{color:var(--mut);font-size:14px}
 .kinds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .kinds button{text-align:left;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;min-height:64px}
 .kinds b{display:block;font-size:14.5px;line-height:1.35}
@@ -134,15 +134,28 @@ tr.sum td{font-weight:900}
 .gos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.go{display:block;text-align:center;padding:10px 6px;border-radius:10px;background:#fee500;color:#191600;font-weight:700;text-decoration:none;font-size:14px;line-height:1.3}
 .foot{font-size:12.5px;color:var(--mut);margin-top:16px}
 .leaflet-container{font:inherit}
+.sheethd{display:none}.grab{width:44px;height:5px;border-radius:3px;background:#c9cfdd;margin:0 auto 8px}
+.shrow{display:flex;justify-content:space-between;gap:10px;align-items:baseline}#shTitle{flex:1;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}#shFee{font-weight:900;color:var(--red);white-space:nowrap;font-size:14.5px;padding-right:6px}
+.sticky{display:none;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;padding:8px 16px;font-weight:700}
+.sticky b{font-size:19px}
 @media(max-width:860px){
  .app{display:block;height:auto}
  .mapwrap{height:58svh;min-height:340px}
  .side{border-left:0;padding:14px 16px calc(28px + env(safe-area-inset-bottom))}
  h1{font-size:24px}
- .sticky{position:sticky;top:0;z-index:700;display:flex}
+ .sticky{display:none!important}
+ /* 휴대폰 : 지도는 화면 전체에 고정, 정보는 아래 판(바텀시트)을 끌어 올림 */
+ html,body{height:100%;overflow:hidden}
+ .mapwrap{position:fixed;inset:0;height:auto!important;min-height:0!important}
+ .side{position:fixed;left:0;right:0;bottom:0;height:88svh;z-index:900;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.2);transform:translateY(var(--sy,calc(88svh - 112px)));transition:transform .28s ease;overflow-y:auto;overscroll-behavior:contain;padding-top:0!important}
+ .side.drag{transition:none}
+ .sheethd{display:block!important;position:sticky;top:0;z-index:5;background:#fff;margin:0 -16px 8px;padding:8px 16px 10px;border-bottom:1px solid var(--line);touch-action:none;cursor:grab;border-radius:18px 18px 0 0}
+ .leaflet-control-zoom{display:none}
+ .fabs{top:calc(66px + env(safe-area-inset-top));bottom:auto;right:10px;gap:6px}.fab{height:36px;font-size:13px;padding:0 10px;border-radius:10px}.fab.ov{height:34px}
+ .tip,.spbar{bottom:calc(124px + env(safe-area-inset-bottom))}
+ .legend{left:12px;right:auto;top:calc(104px + env(safe-area-inset-top));max-width:60%}
+ .search{right:12px}
 }
-.sticky{display:none;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;padding:8px 16px;font-weight:700}
-.sticky b{font-size:19px}
 </style>
 </head>
 <body>
@@ -168,15 +181,17 @@ tr.sum td{font-weight:900}
       <button class="fab" id="bMe" type="button">내 위치</button>
     </div>
   </div>
-  <div class="side">
-    <div class="toprow"><h1>땅 측량 길잡이</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
-    <p class="sub">지도에서 내 땅을 누르면 필요한 측량과 예상 수수료, 신청 방법을 알려 드려요.</p>
+  <div class="side" id="side">
+    <div class="sheethd" id="sheetHd"><div class="grab"></div><div class="shrow"><b id="shTitle">지도에서 내 땅을 콕 눌러 보세요</b><span id="shFee"></span></div></div>
+    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
+    <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
 
-    <h2>1. 무슨 일로 측량하세요?</h2>
-    <div class="kinds" id="kinds"></div>
+    <h2>내 땅</h2>
+    <div class="infobox" id="landInfo"></div>
 
-    <h2>2. 내 땅</h2>
+    <h2>측량이 필요하세요? <small>무슨 일인지 골라 주세요</small></h2>
+    <div class="kinds" id="kinds"></div>
     <div id="pBox"></div>
 
     <div class="res" aria-live="polite">
@@ -301,12 +316,15 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
   return `<div class="hist"><div class="hh2"><b>공시지가 추이</b><span>작년보다 <b style="color:${col(y1)}">${sg(y1)}</b> · ${first[0]}년보다 <b style="color:${col(yn)}">${sg(yn)}</b></span></div>
   <div class="bars">${h.map(([y,v])=>`<div class="bar" data-hv="${y}년 ${v.toLocaleString()}원/㎡" title="${y}년 ${v.toLocaleString()}원/㎡"><i style="height:${Math.max(4,v/max*100)}%"></i><small>${String(y).slice(2)}</small></div>`).join('')}</div>
   <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
-function pBoxHTML(){
+function infoHTML(){
   const p=S.parcel;
-  const head=p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+  return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
-    :`<div class="empty">지도에서 땅을 누르면 지번·공시지가·면적이 채워져요. 아래는 예시 값이에요.</div>`;
+    :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
+function pBoxHTML(){
+  const p=S.parcel;
+  const head=p?'':`<div class="empty">땅을 고르기 전이라 아래는 예시 값이에요.</div>`;
   const multi=S.kind==='split'||(S.kind==='stat'&&S.st==='area'),split=S.kind==='split',conv=S.kind==='conv';
   const desigBox=`<div class="f">${split?'분할 방식':'적용 구분'}<div class="seg" id="desig">${DESIG.map(d=>`<button type="button" data-d="${d[0]}" aria-pressed="${S.desig===d[0]}">${d[1]}<small>${d[2]}</small></button>`).join('')}</div><span class="hint">${esc(DESIG.find(d=>d[0]===S.desig)[3])}</span></div>`;
   return `<div class="parcel">${head}
@@ -334,7 +352,7 @@ function pBoxHTML(){
   <p class="hint" style="margin:0">모르면 '일반 땅'. 도시개발·구획정리로 새로 만든 땅은 '좌표 지역'(경계점좌표등록부)인 경우가 많아요.</p></div>`;
 }
 function bindInputs(){
-  $('pBox').onclick=e=>{const b=e.target.closest('.bar[data-hv]');if(b&&$('hv')){$('hv').textContent=b.dataset.hv;for(const x of b.parentNode.children)x.classList.toggle('on',x===b)}};
+  $('landInfo').onclick=e=>{const b=e.target.closest('.bar[data-hv]');if(b&&$('hv')){$('hv').textContent=b.dataset.hv;for(const x of b.parentNode.children)x.classList.toggle('on',x===b)}};
   $('lands').onclick=e=>{const b=e.target.closest('button');if(b){S.land=b.dataset.l;render()}};
   const num=(id,key)=>{const el=$(id);if(el)el.oninput=()=>{S[key]=+el.value||0;calc()}};
   num('price','price');
@@ -343,7 +361,7 @@ function bindInputs(){
   renderParts();
   if($('indiv'))$('indiv').onchange=e=>{S.indiv=e.target.checked;calc()};
   $('reds').onclick=e=>{const b=e.target.closest('button');if(b){S.red=b.dataset.r;render()}};
-  if($('bDraw'))$('bDraw').onclick=()=>{if(!window.__split)return tip('지도를 불러오지 못했어요');window.__split.start();if(innerWidth<=860)document.querySelector('.mapwrap').scrollIntoView({behavior:'smooth'})};
+  if($('bDraw'))$('bDraw').onclick=()=>{if(!window.__split)return tip('지도를 불러오지 못했어요');window.__split.start();if(innerWidth<=860&&window.__setSheet)window.__setSheet(0)};
   if($('toSu'))$('toSu').onclick=()=>{S.land='수치';render()};
   if($('sts'))$('sts').onclick=e=>{const b=e.target.closest('button');if(b){S.st=b.dataset.s;render()}};
   if($('qty'))$('qty').oninput=()=>{const v=Math.floor(+$('qty').value);if(v>=1&&v<=50){S.qty=v;if(S.bld){render();const q=$('qty');q.focus();q.setSelectionRange(q.value.length,q.value.length)}else calc()}};
@@ -356,7 +374,7 @@ function bindInputs(){
 function render(){
   if(window.__split){const multi=S.kind==='split'||(S.kind==='stat'&&S.st==='area');if(!multi&&(window.__split.lines.length||window.__split.on))window.__split.clear()}
   for(const b of $('kinds').children)b.setAttribute('aria-pressed',b.dataset.k===S.kind);
-  $('pBox').innerHTML=pBoxHTML();bindInputs();
+  $('landInfo').innerHTML=infoHTML();$('pBox').innerHTML=pBoxHTML();bindInputs();sheetHead();
   for(const b of $('lands').children)b.setAttribute('aria-pressed',b.dataset.l===S.land);
   const K=KINDS.find(o=>o.k===S.kind);
   $('nextT').textContent=K.n+' 다음에 할 일';$('next').innerHTML=K.next.map(t=>`<li>${esc(t)}</li>`).join('');
@@ -409,6 +427,7 @@ function calc(){
   $('kName').innerHTML=esc(K.n)+' <span class="vtag">부가세 포함</span>';$('total').innerHTML=all.toLocaleString('ko-KR')+'<small>원</small>';
   $('vat').textContent='수수료 '+won(tot)+' + 부가세 '+won(vat)+(k==='stat'&&S.st!=='area'||conv&&S.region!=='군'?' · LX 비교 전 계산':'');
   $('stkK').textContent=K.n;$('stkV').textContent=won(all)+' (부가세 포함)';
+  if($('shFee'))$('shFee').textContent=S.parcel?K.n.replace('측량','')+' '+won(all):'';
   renderBasket();
 }
 // ───────── 시군구 지적부서 (contacts.js : window.CONTACTS = [{code:"47250", sido, sgg, dept, team, tel, place, memo}]) ─────────
@@ -500,7 +519,7 @@ function applyShare(q){const n=x=>+q.get(x);
   if(q.get('d'))S.desig=n('d');if(q.get('r'))S.red=q.get('r');if(q.get('i')==='0')S.indiv=false}
 let PENDING=null;
 $('bShare').onclick=async()=>{const url=shareURL(),r=compute(S),t=`${S.parcel?S.parcel.addr+' ':''}${r.K.n} 예상 수수료 ${won(r.all)} (부가세 포함)`;
-  try{if(navigator.share){await navigator.share({title:'땅 측량 길잡이',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{if(navigator.share){await navigator.share({title:'내땅 보이소',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
   try{await navigator.clipboard.writeText(t+'\n'+url);tip('링크를 복사했어요. 카톡에 붙여 넣으세요')}catch(e){prompt('이 링크를 복사하세요',url)}};
 // ───────── 민원실용 요약 ─────────
 function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function'?findLX(p.addr):null,A=p?areaName(p.addr):null;
@@ -511,7 +530,7 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
   if(S.red==='merit')need.push('국가유공자 확인서 또는 장애인증명서');if(S.red==='dis')need.push('피해사실확인서');
   if(S.kind==='split')need.push('분할 허가가 필요한 땅이면 허가 관련 서류');if(S.kind==='conv')need.push('산지전용·개발행위 허가서 또는 준공 서류');
   let bk='';if(BASKET.length){const B=basketCalc();bk=`<h3>담은 땅 ${BASKET.length}건 합계 ${won(B.all)} (부가세 포함)</h3><ul>${B.items.map(x=>`<li>${esc(x.it.parcel?x.it.parcel.addr:'직접 입력')} · ${esc(x.r.K.n)} · ${won(Math.round(x.tot*1.1))}</li>`).join('')}</ul>`}
-  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 땅 측량 길잡이에서 계산한 참고용 예상 금액이에요</div>
+  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 내땅 보이소에서 계산한 참고용 예상 금액이에요</div>
   <table><tbody>
    <tr><td>땅</td><td><b>${esc(p?p.addr:'직접 입력한 땅')}</b>${p&&p.road?`<br>도로명 ${esc(p.road)}`:''}</td></tr>
    ${p&&p.jimok?`<tr><td>지목</td><td>${esc(p.jimok)}</td></tr>`:''}
@@ -558,6 +577,23 @@ const setSide=off=>{document.body.classList.toggle('sideoff',off);const b=$('bSi
   try{localStorage.setItem('sg_side',off?'1':'')}catch(e){}setTimeout(()=>{if(window.__map)window.__map.invalidateSize()},280)};
 $('bSide').onclick=()=>setSide(!document.body.classList.contains('sideoff'));
 try{if(localStorage.getItem('sg_side')&&innerWidth>860)setSide(true)}catch(e){}
+// ───────── 휴대폰 아래 판(바텀시트) ─────────
+const isSheet=()=>innerWidth<=860;let SHEET=0;
+function sheetPos(n){return n===2?'0px':n===1?'42svh':'calc(88svh - 112px)'}
+function setSheet(n){SHEET=n;if(!isSheet())return;const sd=$('side');sd.style.setProperty('--sy',sheetPos(n));
+  if(n===1&&S.parcel){const li=$('landInfo');sd.scrollTop=Math.max(0,li.offsetTop-li.previousElementSibling.offsetHeight-$('sheetHd').offsetHeight-14)}else if(n===0)sd.scrollTop=0}
+window.__setSheet=setSheet;
+function sheetHead(){const p=S.parcel;$('shTitle').textContent=p?p.addr:'지도에서 내 땅을 콕 눌러 보세요'}
+{const hd=$('sheetHd'),sd=$('side');let st=null;
+  hd.addEventListener('pointerdown',e=>{if(!isSheet())return;const m=new DOMMatrix(getComputedStyle(sd).transform);st={y:e.clientY,t:m.m42,t0:Date.now(),moved:false};sd.classList.add('drag');hd.setPointerCapture(e.pointerId)});
+  hd.addEventListener('pointermove',e=>{if(!st)return;const dy=e.clientY-st.y;if(Math.abs(dy)>6)st.moved=true;const ty=Math.max(0,st.t+dy);sd.style.transform=`translateY(${ty}px)`});
+  hd.addEventListener('pointerup',e=>{if(!st)return;sd.classList.remove('drag');sd.style.transform='';const dy=e.clientY-st.y,v=dy/Math.max(1,Date.now()-st.t0);
+    if(!st.moved)setSheet((SHEET+1)%3);
+    else{const H=innerHeight,ty=st.t+dy,c=[0,H*.88-112,H*.42].map(x=>x),pos=[2,0,1];let best=0,bd=1e9;
+      if(v>.6)setSheet(Math.max(0,SHEET===2?1:0));else if(v<-.6)setSheet(Math.min(2,SHEET+1));
+      else{[[2,0],[1,H*.88-H*.42],[0,H*.88-112]].forEach(([n,y])=>{const d=Math.abs(ty-y);if(d<bd){bd=d;best=n}});setSheet(best)}}
+    st=null});
+  addEventListener('resize',()=>{if(!isSheet())$('side').style.removeProperty('--sy');else setSheet(SHEET)})}
 render();
 function tip(t){document.getElementById('tip').textContent=t}
 // ───────── 지도 (브이월드) ─────────
@@ -693,7 +729,7 @@ async function landUse(p){
 // 면적 (평면 근사, ㎡)
 function ringArea(r){const lat0=r[0][1]*Math.PI/180,kx=111320*Math.cos(lat0),ky=110574;let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]*kx)*(r[i][1]*ky)-(r[i][0]*kx)*(r[j][1]*ky);return Math.abs(a)/2}
 function polyArea(polys){return polys.reduce((s,p)=>s+ringArea(p[0])-p.slice(1).reduce((h,r)=>h+ringArea(r),0),0)}
-async function pick(lat,lon,pnuQ){
+async function pick(lat,lon,pnuQ){window.__picked=1;
   if(!KEY)return tip('브이월드 키(config.js)가 없어 땅을 고를 수 없어요. 아래 칸에 직접 넣어 주세요');
   if(!pnuQ&&map.getZoom()<15){map.setView([lat,lon],17);return tip('조금 더 확대했어요. 내 땅을 다시 눌러 주세요')}
   tip('땅 정보를 가져오는 중…');
@@ -710,7 +746,7 @@ async function pick(lat,lon,pnuQ){
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;tip(S.parcel.addr);addHist(S.parcel,lat,lon);render();
     ledger(S.parcel);
-    if(innerWidth<=860)document.querySelector('.side').scrollIntoView({behavior:'smooth'});
+    if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }
 map.on('click',e=>{if(window.__split&&window.__split.on)return window.__split.tap(e.latlng);pick(e.latlng.lat,e.latlng.lng);identify(e.latlng)});
@@ -787,11 +823,21 @@ $('spEnd').onclick=finish;
 $('spX').onclick=()=>{if(SP.on){SP.on=false;SP.cur=[];SP.hover=null;map.doubleClickZoom.enable();redraw()}SP.hide()};
 $('spUndo').onclick=()=>{SP.cur.pop();redraw()};
 $('spAdd').onclick=()=>SP.start();
-$('spSave').onclick=()=>{if(SP.locked){SP.locked=false;redraw();return}SP.locked=true;redraw();tip('분할 면적을 저장했어요');if(innerWidth<=860&&$('parts'))$('parts').scrollIntoView({behavior:'smooth',block:'center'})};
+$('spSave').onclick=()=>{if(SP.locked){SP.locked=false;redraw();return}SP.locked=true;redraw();tip('분할 면적을 저장했어요');if(innerWidth<=860&&window.__setSheet){window.__setSheet(2);setTimeout(()=>{if($('parts'))$('parts').scrollIntoView({behavior:'smooth',block:'center'})},300)}};
 $('spClr').onclick=()=>{if(SP.on&&!SP.lines.length){SP.clear();return}SP.clear();renderParts();calc()};
 }
+let meDot=null;const showMe=(la,lo,z)=>{map.setView([la,lo],z);if(meDot)meDot.setLatLng([la,lo]);else meDot=L.circleMarker([la,lo],{radius:7,color:'#fff',weight:3,fillColor:'#1a73e8',fillOpacity:1,interactive:false}).addTo(map)};
 $('bMe').onclick=()=>{if(!navigator.geolocation)return tip('이 기기는 위치를 알 수 없어요');tip('내 위치를 찾는 중…');
-  navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],18);tip('내 땅을 눌러 주세요')},()=>tip('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:10000})};
+  navigator.geolocation.getCurrentPosition(p=>{showMe(p.coords.latitude,p.coords.longitude,18);tip('내 땅을 눌러 주세요')},()=>tip('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:10000})};
+// 첫 화면 : 공유 링크 > 내 위치 > 마지막으로 본 곳 > 경북도청
+{const VK='sg_view';let moved=false;
+ try{const v=JSON.parse(localStorage.getItem(VK)||'null');if(!PENDING&&v&&v.z)map.setView([v.la,v.lo],v.z);else if(!PENDING)map.setView([36.5759,128.5056],14)}catch(e){}
+ map.on('moveend',()=>{const c=map.getCenter();try{localStorage.setItem(VK,JSON.stringify({la:+c.lat.toFixed(6),lo:+c.lng.toFixed(6),z:map.getZoom()}))}catch(e){}});
+ map.once('dragstart zoomstart',()=>{moved=true});
+ const go=()=>navigator.geolocation.getCurrentPosition(p=>{if(moved||PENDING||window.__picked)return;const{latitude:la,longitude:lo}=p.coords;
+   if(la<33||la>38.7||lo<124.5||lo>132)return;showMe(la,lo,17);tip('내 위치 근처예요. 내 땅을 눌러 주세요')},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:600000});
+ if(!PENDING&&navigator.geolocation&&location.protocol==='https:'){
+   if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state!=='denied')go()}).catch(go);else go()}}
 // 최근 찾은 땅 (이 기기에만 저장)
 const HK='sg_hist';
 const hist=()=>{try{return JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){return []}};
