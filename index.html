@@ -47,6 +47,7 @@ h2{font-size:16px;margin:18px 0 8px}
 .seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .seg button[aria-pressed=true] small{color:#fff;opacity:.8}
 .seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.note2{border-left:4px solid var(--blue);background:#eef3ff;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5}.note2 b{display:block;color:var(--blue);font-size:14.5px}.note2 button{margin-top:6px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:6px 12px;cursor:pointer}
 .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:3px}.parts .pn{padding-left:10px;color:var(--mut);font-size:13px}
 .reds{display:grid;gap:6px;margin-top:3px}.reds button{text-align:left;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:700;font-size:14.5px}.reds small{font-weight:400;color:var(--mut)}.reds button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.reds button[aria-pressed=true] small{color:#fff;opacity:.85}
 .reset{width:100%;margin-top:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-weight:700;cursor:pointer;color:var(--ink)}
@@ -211,6 +212,8 @@ function pBoxHTML(){
     <button type="button" data-l="토지">일반 땅<small>토지대장</small></button>
     <button type="button" data-l="임야">산<small>지번 앞 '산'</small></button>
     <button type="button" data-l="수치">좌표 지역<small>구획정리 등</small></button></div>
+  ${p&&p.autoLand?`<div class="note2"><b>수치지역입니다</b>경계점좌표등록부가 있는 땅이라 '좌표 지역' 단가로 계산했어요.</div>`
+    :p&&p.areaSrc==='대장'&&S.land==='토지'&&S.area%1!==0?`<div class="note2"><b>수치지역일 수 있어요</b>대장 면적에 소수점이 있어요. 수치지역(경계점좌표등록부)이면 금액이 달라져요. <button type="button" id="toSu">좌표 지역으로 계산</button></div>`:''}
   <div class="row2">
     <label class="f" for="area">면적<span class="in"><input id="area" type="number" inputmode="decimal" min="1" value="${S.area}"><span>㎡</span></span><span class="hint">${p?(p.areaSrc==='대장'?'토지대장 면적':p.areaSrc==='대기'?'대장 면적 가져오는 중…':'지도로 잰 값 · 대장과 다르면 고치세요'):'약 '+Math.round(S.area/3.3058).toLocaleString()+'평'}</span></label>
     <label class="f" for="price">공시지가<span class="in"><input id="price" type="number" inputmode="numeric" min="0" value="${S.price}"><span>원/㎡</span></span><span class="hint"><a href="https://www.realtyprice.kr" target="_blank" rel="noopener">공시가격 알리미</a></span></label>
@@ -224,7 +227,6 @@ function pBoxHTML(){
   ${(multi||conv)?desigBox:''}
   <div class="f">감면 대상<div class="reds" id="reds">${REDS.map(r=>`<button type="button" data-r="${r[0]}" aria-pressed="${S.red===r[0]}">${r[1]}${r[2]?` <small>${r[2]*100}% 감면</small>`:''}</button>`).join('')}</div>
   <span class="hint">${S.red==='merit'?'국가유공자증·장애인증명서와 본인 소유를 확인할 서류가 필요해요.':S.red==='dis'?'피해사실확인서가 필요하고, 재난 난 날부터 2년 안이어야 해요.':'감면은 한 가지만 적용되고, 측량이 끝난 뒤에는 소급되지 않아요.'}</span></div>
-  ${p&&p.autoLand?`<p class="hint" style="margin:0;color:var(--red)">토지대장 축척이 없어 '좌표 지역'으로 골랐어요.</p>`:''}
   <p class="hint" style="margin:0">모르면 '일반 땅'. 도시개발·구획정리로 새로 만든 땅은 '좌표 지역'(경계점좌표등록부)인 경우가 많아요.</p></div>`;
 }
 function bindInputs(){
@@ -236,6 +238,7 @@ function bindInputs(){
   renderParts();
   if($('indiv'))$('indiv').onchange=e=>{S.indiv=e.target.checked;calc()};
   $('reds').onclick=e=>{const b=e.target.closest('button');if(b){S.red=b.dataset.r;render()}};
+  if($('toSu'))$('toSu').onclick=()=>{S.land='수치';render()};
   if($('sts'))$('sts').onclick=e=>{const b=e.target.closest('button');if(b){S.st=b.dataset.s;render()}};
   if($('qty'))$('qty').oninput=()=>{const v=Math.floor(+$('qty').value);if(v>=1&&v<=50){S.qty=v;if(S.bld){render();const q=$('qty');q.focus();q.setSelectionRange(q.value.length,q.value.length)}else calc()}};
   if($('bld'))$('bld').onchange=e=>{S.bld=e.target.checked;render()};
