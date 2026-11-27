@@ -74,6 +74,7 @@ tr.sum td{font-weight:900}
 .box li{margin-bottom:4px}
 .call{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .call a{background:var(--red);color:#fff;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:10px;white-space:nowrap}
+.gos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.go{display:block;text-align:center;padding:10px 6px;border-radius:10px;background:#fee500;color:#191600;font-weight:700;text-decoration:none;font-size:14px;line-height:1.3}
 .foot{font-size:12.5px;color:var(--mut);margin-top:16px}
 .leaflet-container{font:inherit}
 @media(max-width:860px){
@@ -242,11 +243,26 @@ function calc(){
   $('stkK').textContent=K.n;$('stkV').textContent=won(tot);
 }
 // ───────── 시군구 지적부서 (contacts.js : window.CONTACTS = [{code:"47250", sido, sgg, dept, team, tel, place, memo}]) ─────────
+// 가는 길 : 카카오맵으로 넘김 (좌표가 있으면 바로 길찾기, 없으면 이름으로 검색)
+function areaName(addr){const w=String(addr||'').split(' ');let city='',gu='';
+  for(const x of w.slice(1)){if(!city&&/(시|군)$/.test(x)){city=x;continue}if(city&&/구$/.test(x)){gu=x;break}if(/(읍|면|동|리|가|로|길)$/.test(x)||/\d/.test(x))break}
+  if(!city&&/(특별시|광역시|특별자치시)$/.test(w[0]||'')){city=w[0];gu=(w[1]&&/구$/.test(w[1]))?w[1]:''}
+  return {city,gu,office:gu?`${city} ${gu}청`:city?(/(특별시|광역시)$/.test(city)?city+'청':city+'청'):'',short:((/(특별시|광역시|특별자치시)$/.test(city)&&gu)?gu:city).replace(/(특별자치시|특별시|광역시|시|군|구)$/,'')}}
+const kakaoTo=(name,lat,lon)=>`https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lon}`;
+const kakaoFind=q=>`https://map.kakao.com/link/search/${encodeURIComponent(q)}`;
+function goBtn(label,href){return `<a class="go" href="${href}" target="_blank" rel="noopener">${esc(label)}</a>`}
 function renderContact(){
   const list=window.CONTACTS||[],code=S.parcel?S.parcel.pnu.slice(0,5):'';
-  const c=list.find(x=>String(x.code)===code&&x.tel);
-  if(c){$('contact').innerHTML=`<h3>${esc(c.sgg)} 지적 담당</h3><div class="call"><div>${esc(c.dept)}${c.team?' '+esc(c.team):''}<br><span class="hint">${esc(c.place||'')}</span></div>${c.tel?`<a href="tel:${esc(String(c.tel).replace(/[^0-9]/g,''))}">${esc(c.tel)} 전화</a>`:''}</div>${c.memo?`<p class="hint" style="margin:8px 0 0">${esc(c.memo)}</p>`:''}`;return}
-  $('contact').innerHTML=`<h3>우리 시·군·구 지적 담당</h3><p class="hint" style="margin:0">${S.parcel?esc(S.parcel.sgg||'이 지역')+' 연락처는 준비 중이에요. 시·군·구청 대표번호로 지적 담당을 찾아 주세요.':'지도에서 땅을 누르면 그 땅을 맡은 시·군·구 지적 부서를 알려 드려요.'}</p>`;
+  const c=list.find(x=>String(x.code)===code)||{};
+  const A=areaName(S.parcel&&S.parcel.addr),office=c.office||A.office;
+  if(!S.parcel){$('contact').innerHTML=`<h3>우리 시·군·구 지적 담당</h3><p class="hint" style="margin:0">지도에서 땅을 누르면 그 땅을 맡은 시·군·구 지적 부서와 가는 길을 알려 드려요.</p>`;return}
+  const head=c.tel?`<div class="call"><div>${esc(c.dept||'지적 담당')}${c.team?' '+esc(c.team):''}<br><span class="hint">${esc(c.place||'')}</span></div><a href="tel:${esc(String(c.tel).replace(/[^0-9]/g,''))}">${esc(c.tel)} 전화</a></div>${c.memo?`<p class="hint" style="margin:8px 0 0">${esc(c.memo)}</p>`:''}`
+    :`<p class="hint" style="margin:0 0 4px">${esc(c.sgg||A.city||'이 지역')} 지적 담당 연락처는 준비 중이에요. 시·군·구청 대표번호로 지적 담당을 찾아 주세요.</p>`;
+  const toOffice=c.lat&&c.lon?kakaoTo(office,c.lat,c.lon):kakaoFind(office);
+  const toLX=c.lx_lat&&c.lx_lon?kakaoTo(c.lx_name||'LX 지사',c.lx_lat,c.lx_lon):kakaoFind(c.lx_name?'한국국토정보공사 '+c.lx_name:'한국국토정보공사 '+A.short);
+  $('contact').innerHTML=`<h3>${esc(c.sgg||A.city||'우리 시·군·구')} 지적 담당</h3>${head}
+   <div class="gos">${goBtn(office+' 가는 길',toOffice)}${goBtn('LX '+(c.lx_name||'지사')+' 가는 길',toLX)}</div>
+   <p class="hint" style="margin:6px 0 0">카카오맵이 열려요. 버스·자동차·걸어서 길을 고를 수 있어요. 가기 전에 신분증을 챙기시고, 대리인은 위임장이 필요해요. 방문하지 않고 <a href="https://baro.lx.or.kr" target="_blank" rel="noopener">LX 지적측량신청포털</a>로 신청해도 돼요.</p>`;
 }
 
 $('bReset').onclick=()=>{Object.assign(S,DEF);if(window.__hl)window.__hl.clearLayers();$('sQ').value='';tip('지도를 확대해서 내 땅을 눌러 주세요');render();document.querySelector('.side').scrollTop=0};
