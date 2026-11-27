@@ -254,12 +254,12 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
 // 면적 (평면 근사, ㎡)
 function ringArea(r){const lat0=r[0][1]*Math.PI/180,kx=111320*Math.cos(lat0),ky=110574;let a=0;for(let i=0,j=r.length-1;i<r.length;j=i++)a+=(r[j][0]*kx)*(r[i][1]*ky)-(r[i][0]*kx)*(r[j][1]*ky);return Math.abs(a)/2}
 function polyArea(polys){return polys.reduce((s,p)=>s+ringArea(p[0])-p.slice(1).reduce((h,r)=>h+ringArea(r),0),0)}
-async function pick(lat,lon){
+async function pick(lat,lon,pnuQ){
   if(!KEY)return tip('브이월드 키(config.js)가 없어 땅을 고를 수 없어요. 아래 칸에 직접 넣어 주세요');
-  if(map.getZoom()<15){map.setView([lat,lon],17);return tip('조금 더 확대했어요. 내 땅을 다시 눌러 주세요')}
+  if(!pnuQ&&map.getZoom()<15){map.setView([lat,lon],17);return tip('조금 더 확대했어요. 내 땅을 다시 눌러 주세요')}
   tip('땅 정보를 가져오는 중…');
   try{
-    const d=await vw('data',{service:'data',version:'2.0',request:'getfeature',data:'LP_PA_CBND_BUBUN',geomfilter:`POINT(${lon.toFixed(7)} ${lat.toFixed(7)})`,size:'1',geometry:'true',attribute:'true',crs:'EPSG:4326'});
+    const d=await vw('data',{service:'data',version:'2.0',request:'getfeature',data:'LP_PA_CBND_BUBUN',...(pnuQ?{attrfilter:'pnu:=:'+pnuQ}:{geomfilter:`POINT(${lon.toFixed(7)} ${lat.toFixed(7)})`}),size:'1',geometry:'true',attribute:'true',crs:'EPSG:4326'});
     const r=d&&d.response;if(!r||r.status!=='OK')throw new Error(r&&r.status==='NOT_FOUND'?'여기에는 필지가 없어요':'브이월드가 거절했어요 ('+((r&&r.error&&r.error.code)||'응답 없음')+')');
     const f=r.result.featureCollection.features[0],g=f.geometry,pr=f.properties||{};
     const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
@@ -267,7 +267,7 @@ async function pick(lat,lon){
     S.parcel={pnu,addr:pr.addr||jb,jimok:m?m[1]:'',price:+pr.jiga||0,year:pr.gosi_year||'',sgg:(pr.addr||'').split(' ').slice(0,2).join(' ')};
     S.area=Math.round(polyArea(polys));if(S.parcel.price)S.price=S.parcel.price;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
-    hl.clearLayers();L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);
+    hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ)map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});
     tip(S.parcel.addr);render();
     if(innerWidth<=860)document.querySelector('.side').scrollIntoView({behavior:'smooth'});
   }catch(e){tip(e.message)}
@@ -287,7 +287,7 @@ $('sForm').onsubmit=async e=>{e.preventDefault();const q=$('sQ').value.trim();if
     if(!items.length){box.innerHTML='<button type="button" disabled>찾는 주소가 없어요. 시·군과 동·리를 함께 넣어 보세요</button>';return}
     box.innerHTML=items.map((it,i)=>`<button type="button" data-i="${i}">${esc((it.address&&(it.address.parcel||it.address.road))||it.title||'')}</button>`).join('');
     box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const it=items[+b.dataset.i];box.hidden=true;
-      const x=+it.point.x,y=+it.point.y;map.setView([y,x],18);pick(y,x)};
+      const x=+it.point.x,y=+it.point.y,id=String(it.id||'');map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
   }catch(err){box.innerHTML=`<button type="button" disabled>${esc(err.message)}</button>`}};
 document.addEventListener('click',e=>{if(!e.target.closest('#hits,#sForm'))$('hits').hidden=true});
 if(!KEY)tip('브이월드 키가 없어 일반 지도만 보여요. 땅 정보는 아래 칸에 직접 넣어 주세요');
