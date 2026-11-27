@@ -144,13 +144,23 @@ tr.sum td{font-weight:900}
 <script>
 {
 // ───────── 수수료 계산 (2026 고시 단가산출서 품셈 그대로) ─────────
-const C={split_d:[480036,36000,17963,23591,2],split_s:[428441,30750,15962,19497,2],bound_d:[472136,37000,17916,23021,1],bound_s:[371070,26750,13655,18470,1],stat_d:[437242,33250,16441,23364,2],stat_s:[392007,29000,16001,18812,2],city_d:[472136,37000,17916,23021,1],city_s:[371070,26750,13655,18470,1]};
+// 공정일람표(군지역) 품 : [지적기사 외업,내업],[지적산업기사 외업,내업],[지적기능사 외업,내업]
+const W=[274286,242724,180875],DAY=25000;
+const Q={split_d:[[.51,.22],[.47,.34],[.46,0]],split_s:[[.44,.21],[.40,.34],[.39,0]],bound_d:[[.53,.20],[.48,.29],[.47,0]],bound_s:[[.38,.20],[.35,.27],[.34,0]],stat_d:[[.48,.20],[.43,.29],[.42,0]],stat_s:[[.41,.20],[.38,.27],[.37,0]],city_d:[[.53,.20],[.48,.29],[.47,0]],city_s:[[.38,.20],[.35,.27],[.34,0]]};
+// 기계경비, 재료소모품비, 기준 필지 수
+const C={split_d:[17963,23591,2],split_s:[15962,19497,2],bound_d:[17916,23021,1],bound_s:[13655,18470,1],stat_d:[16441,23364,2],stat_s:[16001,18812,2],city_d:[17916,23021,1],city_s:[13655,18470,1]};
 const RATE={split:{토지:.784,임야:.778,수치:.853},bound:{토지:.607,임야:.597,수치:.666},stat:{토지:.772,임야:.766,수치:.832},city:{토지:.609,임야:.598,수치:.668}};
 const BASE={split:{토지:1500,임야:5000,수치:1500},bound:{토지:300,임야:3000,수치:300},stat:{토지:1500,임야:5000,수치:1500},city:{토지:300,임야:3000,수치:300}};
 const BANDS=[[9000,.7],[26000,.85],[51000,1],[170000,1.3],[1710000,1.5],[8530000,1.6],[17060000,1.7],[25590000,1.8],[34120000,1.9],[42650000,2],[51180000,2.1],[59710000,2.2],[68240000,2.3],[77000000,2.4],[1e15,2.5]];
 const r1000=x=>{const q=Math.floor(x/1000),r=x-q*1000;return (r>500?q+1:q)*1000};
-const areaK=(k,l,a)=>{const b=BASE[k][l];if(a<=b)return [1,0];const n=Math.ceil((a-b)/b);return [n<=5?1+.2*n:1.5+.1*n,n]};
-function unit(k,l,a){const c=C[k+(l==='수치'?'_s':'_d')],d=c[4];const kk=areaK(k,l,a)[0]*(l==='임야'?1.28:1);const lab=c[0]/d*kk,tr=c[1]/d*kk,g=Math.round(lab*.2),s=Math.round((lab+g)*.13);return r1000(Math.round((lab+tr+c[2]/d+c[3]/d+g+s)*RATE[k][l]))}
+const r2=x=>Math.round(x*100+1e-7)/100;
+const areaK=(k,l,a)=>{const b=BASE[k][l];if(a<=b)return [1,0];const n=Math.ceil((a-b)/b-1e-9);return [n<=5?1+.2*n:1.5+.1*n,n]};
+// 품 × (면적계수 + 등록계수 할증 0.28) → 사람별 외업·내업 소수 둘째 자리 반올림 (LX 계산과 일치 확인)
+function unit(k,l,a){const key=k+(l==='수치'?'_s':'_d'),q=Q[key],[M,R,d]=C[key];
+ const coef=areaK(k,l,a)[0]+(l==='임야'?.28:0);let lab=0,tr=0;
+ q.forEach(([o,n],i)=>{const oe=r2(o*coef),ne=r2(n*coef);lab+=(oe+ne)*W[i];tr+=oe*DAY});
+ lab/=d;tr/=d;const g=Math.round(lab*.2),s=Math.round((lab+g)*.13);
+ return r1000(Math.round((lab+tr+M/d+R/d+g+s)*RATE[k][l]))}
 const KINDS=[
  {k:'bound',n:'경계복원측량',q:'이웃 땅과 경계가 어디인지',
   next:['측량하는 날 현장에 나가 경계점 위치를 함께 확인해요.','복원한 경계점에 경계점표지(말뚝)를 박아요. 표지 값은 따로예요.','측량 결과에 다툼이 있으면 시·도에 지적측량 적부심사를 청구할 수 있어요.']},
@@ -217,7 +227,7 @@ function calc(){
   const small=S.indiv&&(S.kind==='split'||S.kind==='stat')&&each<=(S.land==='임야'?200:60);
   const rows=[[`기본 단가 (${BASE[S.kind][S.land].toLocaleString()}㎡까지)`,won(base)]];
   const [ak,an]=areaK(S.kind,S.land,each);
-  if(an)rows.push([`면적 가산 (${an}칸 초과, 품 ×${ak.toFixed(1)})`,won(u)]);
+  if(an)rows.push([`면적 가산 (${an}칸 초과, 면적계수 ${ak.toFixed(1)})`,won(u)]);
   rows.push([`지가계수 ×${gk} (공시지가 ${P.toLocaleString()}원/㎡)`,won(per)+(split?'/필지':'')]);
   let pr=per;if(split&&S.desig){pr=r1000(per*(1+S.desig));rows.push([(S.desig===.4?'면적 지정':'선 지정')+` +${S.desig*100}%`,won(pr)+'/필지'])}
   let tot=pr*N;if(split)rows.push([`나눈 뒤 ${N}필지`,won(tot)]);
@@ -228,7 +238,7 @@ function calc(){
   rows.push(['예상 수수료 (부가세 별도)',won(tot)]);
   $('bd').innerHTML=rows.map((r,i)=>`<tr${i===rows.length-1?' class="sum"':''}><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
   $('kName').textContent=K.n;$('total').innerHTML=tot.toLocaleString('ko-KR')+'<small>원</small>';
-  $('vat').textContent='부가세 포함 약 '+won(Math.round(tot*1.1/10)*10)+(an?' · 넓은 땅 가산은 시험 계산':'');
+  $('vat').textContent='부가세 포함 약 '+won(Math.round(tot*1.1/10)*10);
   $('stkK').textContent=K.n;$('stkV').textContent=won(tot);
 }
 // ───────── 시군구 지적부서 (contacts.js : window.CONTACTS = [{code:"47250", sido, sgg, dept, team, tel, place, memo}]) ─────────
