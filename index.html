@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료</title>
-<meta name="description" content="내땅 보이소 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
-<meta name="keywords" content="내땅 보이소,내땅보이소,땅 측량 길잡이,지적측량 수수료,경계복원측량 비용,분할측량 비용,측량 수수료 계산,공시지가 조회,용도지역 확인,LX 지사">
+<title>땅 측량 길잡이</title>
+<meta name="description" content="땅 측량 길잡이 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
+<meta name="keywords" content="땅 측량 길잡이,지적측량 수수료,경계복원측량 비용,분할측량 비용,측량 수수료 계산,공시지가 조회,용도지역 확인,LX 지사">
 <!-- 네이버 서치어드바이저 소유 확인 코드 : 받은 코드로 아래 줄의 content 값을 바꾸세요 -->
 <meta name="naver-site-verification" content="">
 <link rel="canonical" href="https://ssemtke25-png.github.io/survey-guide/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="내땅 보이소">
-<meta property="og:title" content="내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료">
+<meta property="og:site_name" content="땅 측량 길잡이">
+<meta property="og:title" content="땅 측량 길잡이 - 공시지가·용도지역·측량 수수료를 지도에서 한 번에">
 <meta property="og:description" content="지도에서 내 땅을 누르면 공시지가, 용도지역, 지적측량 예상 수수료와 신청하는 곳까지 알려 드려요.">
 <meta property="og:url" content="https://ssemtke25-png.github.io/survey-guide/">
 <meta property="og:image" content="https://ssemtke25-png.github.io/survey-guide/og.png">
@@ -22,7 +22,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="내땅 보이소">
+<meta name="apple-mobile-web-app-title" content="땅 길잡이">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
@@ -163,8 +163,8 @@ tr.sum td{font-weight:900}
     </div>
   </div>
   <div class="side">
-    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
-    <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
+    <div class="toprow"><h1>땅 측량 길잡이</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
+    <p class="sub">지도에서 내 땅을 누르면 필요한 측량과 예상 수수료, 신청 방법을 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
 
     <h2>1. 무슨 일로 측량하세요?</h2>
@@ -493,7 +493,7 @@ function applyShare(q){const n=x=>+q.get(x);
   if(q.get('d'))S.desig=n('d');if(q.get('r'))S.red=q.get('r');if(q.get('i')==='0')S.indiv=false}
 let PENDING=null;
 $('bShare').onclick=async()=>{const url=shareURL(),r=compute(S),t=`${S.parcel?S.parcel.addr+' ':''}${r.K.n} 예상 수수료 ${won(r.all)} (부가세 포함)`;
-  try{if(navigator.share){await navigator.share({title:'내땅 보이소',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{if(navigator.share){await navigator.share({title:'땅 측량 길잡이',text:t,url});return}}catch(e){if(e&&e.name==='AbortError')return}
   try{await navigator.clipboard.writeText(t+'\n'+url);tip('링크를 복사했어요. 카톡에 붙여 넣으세요')}catch(e){prompt('이 링크를 복사하세요',url)}};
 // ───────── 민원실용 요약 ─────────
 function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function'?findLX(p.addr):null,A=p?areaName(p.addr):null;
@@ -504,7 +504,7 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
   if(S.red==='merit')need.push('국가유공자 확인서 또는 장애인증명서');if(S.red==='dis')need.push('피해사실확인서');
   if(S.kind==='split')need.push('분할 허가가 필요한 땅이면 허가 관련 서류');if(S.kind==='conv')need.push('산지전용·개발행위 허가서 또는 준공 서류');
   let bk='';if(BASKET.length){const B=basketCalc();bk=`<h3>담은 땅 ${BASKET.length}건 합계 ${won(B.all)} (부가세 포함)</h3><ul>${B.items.map(x=>`<li>${esc(x.it.parcel?x.it.parcel.addr:'직접 입력')} · ${esc(x.r.K.n)} · ${won(Math.round(x.tot*1.1))}</li>`).join('')}</ul>`}
-  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 내땅 보이소에서 계산한 참고용 예상 금액이에요</div>
+  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 땅 측량 길잡이에서 계산한 참고용 예상 금액이에요</div>
   <table><tbody>
    <tr><td>땅</td><td><b>${esc(p?p.addr:'직접 입력한 땅')}</b>${p&&p.road?`<br>도로명 ${esc(p.road)}`:''}</td></tr>
    ${p&&p.jimok?`<tr><td>지목</td><td>${esc(p.jimok)}</td></tr>`:''}
@@ -531,9 +531,19 @@ const setBig=on=>{document.body.classList.toggle('bigtext',on);$('bBig').setAttr
 $('bBig').onclick=()=>setBig(!document.body.classList.contains('bigtext'));try{if(localStorage.getItem('sg_big'))setBig(true)}catch(e){}
 // 홈 화면에 추가 (안드로이드 : 설치 창 / 아이폰 : 안내)
 let INST=null;const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;$('bInst').hidden=false});
-if(!standalone&&/iPhone|iPad|iPod/.test(navigator.userAgent))$('bInst').hidden=false;
-$('bInst').onclick=async()=>{if(INST){INST.prompt();await INST.userChoice;INST=null;$('bInst').hidden=true}else alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.")};
+const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+$('bInst').textContent=isMobile?'📲 홈 화면에 추가':'🖥️ 바탕화면에 추가';
+if(!standalone&&(isIOS||!isMobile))$('bInst').hidden=false;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();INST=e;if(!standalone)$('bInst').hidden=false});
+addEventListener('appinstalled',()=>{$('bInst').hidden=true;tip('설치했어요. 바탕화면·시작 메뉴에서 바로 열 수 있어요')});
+// PC에서 설치 창을 못 띄우면 바로가기(.url) 파일을 내려받게 함
+function urlShortcut(){const name=(document.querySelector('h1')||{}).textContent||'땅 측량 길잡이',url=location.origin+location.pathname;
+  const b=new Blob(['[InternetShortcut]\r\nURL='+url+'\r\nIconIndex=0\r\n'],{type:'application/octet-stream'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name+'.url';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+$('bInst').onclick=async()=>{if(INST){INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
+  if(isIOS)return alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.");
+  if(isMobile)return alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.");
+  urlShortcut();alert("바로가기 파일을 받았어요. 다운로드 폴더의 파일을 바탕화면으로 옮기면 돼요.\n\n엣지·크롬이라면 주소창 오른쪽의 '앱 설치' 아이콘으로 설치하면 바탕화면과 시작 메뉴에 바로 생겨요.")};
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 function tip(t){document.getElementById('tip').textContent=t}
@@ -624,9 +634,11 @@ async function ledger(p){
 }
 // 용도지역·지구 : 토지이용계획(NED) → 안 되면 용도지역 도면(2D 데이터)에서 찾기
 // 도로명주소 (브이월드 주소 API, 땅 가운데 점 기준)
-async function roadAddr(p){if(!p.center)return;const [lat,lon]=p.center;
-  try{const d=await vw('address',{service:'address',request:'getAddress',version:'2.0',crs:'EPSG:4326',point:`${lon.toFixed(7)},${lat.toFixed(7)}`,type:'road',simple:'false'});
-    const r=d&&d.response&&d.response.result;const t=Array.isArray(r)&&r[0]&&r[0].text;if(t)p.road=String(t)}catch(e){}}
+async function roadAddr(p){if(p.road||!p.center)return;const [lat,lon]=p.center;
+  const pick=d=>{const r=d&&d.response&&d.response.result;if(!Array.isArray(r))return '';const it=r.find(x=>x.type==='road'||/로|길/.test(String(x.text||'').split(' ').slice(-2).join(' ')))||null;return it&&it.text?String(it.text):''};
+  for(const type of ['road','both']){try{const d=await vw('address',{service:'address',request:'getAddress',version:'2.0',crs:'EPSG:4326',point:`${lon.toFixed(7)},${lat.toFixed(7)}`,type,simple:'false'});
+    console.log('도로명 조회('+type+')',d&&d.response&&d.response.status,d&&d.response&&d.response.result);
+    const t=pick(d);if(t&&(type==='road'||!/\d+-?\d*$/.test(t)||/로|길/.test(t))){p.road=t;return}}catch(e){}}}
 async function landUse(p){
   try{const d=await ned('getLandUseAttr',{pnu:p.pnu,numOfRows:'100'});
     const L=deep(d,'prposAreaDstrcCodeNm');if(L.length){const seen=new Set(),u=[];
@@ -653,7 +665,7 @@ async function pick(lat,lon,pnuQ){
     S.parcel={pnu,addr:pr.addr||jb,jimok:m?m[1]:'',price:+pr.jiga||0,year:pr.gosi_year||'',sgg:(pr.addr||'').split(' ').slice(0,2).join(' ')};
     S.area=Math.round(polyArea(polys));S.partsEdited=false;S.parcel.areaSrc='대기';if(S.parcel.price)S.price=S.parcel.price;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
-    window.__geom=g;S.parcel.center=[lat,lon];if(window.__split)window.__split.clear();
+    window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;tip(S.parcel.addr);addHist(S.parcel,lat,lon);render();
     ledger(S.parcel);
@@ -761,7 +773,7 @@ $('sForm').onsubmit=async e=>{e.preventDefault();const q=$('sQ').value.trim();if
     if(!items.length){box.innerHTML='<button type="button" disabled>찾는 주소가 없어요. 시·군과 동·리를 함께 넣어 보세요</button>';return}
     box.innerHTML=items.map((it,i)=>`<button type="button" data-i="${i}">${esc((it.address&&(it.address.parcel||it.address.road))||it.title||'')}</button>`).join('');
     box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const it=items[+b.dataset.i];box.hidden=true;
-      const x=+it.point.x,y=+it.point.y,id=String(it.id||'');map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
+      const x=+it.point.x,y=+it.point.y,id=String(it.id||'');window.__searchRoad=(it.address&&it.address.road)||'';map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
   }catch(err){box.innerHTML=`<button type="button" disabled>${esc(err.message)}</button>`}};
 document.addEventListener('click',e=>{if(!e.target.closest('#hits,#sForm'))$('hits').hidden=true});
 if(!KEY)tip('브이월드 키가 없어 일반 지도만 보여요. 땅 정보는 아래 칸에 직접 넣어 주세요');
