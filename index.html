@@ -76,11 +76,11 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin:6px 0 2px}.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}.bar i{display:block;width:100%;max-width:26px;background:var(--ink);border-radius:4px 4px 0 0}.bar:last-child i{background:var(--red)}.bar{cursor:pointer}.bar.on i{background:var(--blue)}.bar small{font-size:11px;color:var(--mut)}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}.acts button{padding:11px 4px;border:1.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);font-weight:700;font-size:14px;cursor:pointer}.acts #bAdd{background:var(--ink);color:#fff}
 .bk{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:14px}.bk small{display:block;color:var(--mut);font-size:12.5px}.bk b{white-space:nowrap}.bk button{border:0;background:none;color:var(--mut);font-size:18px;cursor:pointer;padding:0 4px}.bkSum{display:flex;justify-content:space-between;border-top:2px solid var(--ink);padding-top:8px;margin-top:4px;font-weight:900;font-size:17px}
-#sumModal{position:fixed;inset:0;z-index:3000;background:rgba(10,15,30,.6);overflow:auto;padding:16px}.sumIn{max-width:560px;margin:0 auto;background:#fff;border-radius:16px;padding:20px}
+#sumModal{position:fixed;inset:0;z-index:3000;background:rgba(10,15,30,.6);overflow:auto;padding:16px}.sumIn{max-width:640px;margin:0 auto;background:#fff;border-radius:16px;padding:20px}
 .sumIn h2{margin:0 0 2px;font-size:22px}.sumIn .sd{color:var(--mut);font-size:13px;margin-bottom:10px}.sumIn table td{padding:6px 4px;font-size:15px}.sumIn table td:first-child{color:var(--mut);white-space:nowrap;width:30%}.sumIn table td:last-child{text-align:left;white-space:normal}
-.sumBig{border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:10px 0}.sumBig b{font-size:30px;font-weight:900}.sumIn h3{font-size:15.5px;margin:14px 0 4px}.sumIn ul{margin:0;padding-left:20px;font-size:15px}
+.sumBig{border:2px solid var(--ink);border-radius:12px;padding:8px 12px;margin:8px 0}.sumBig b{font-size:26px;font-weight:900}.sbk{font-weight:800;font-size:15px}.sumT{width:100%;border-collapse:collapse}.sumIn .sumT td{padding:5px 6px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:top}.sumIn .sumT td:nth-child(odd){color:var(--mut);white-space:nowrap;width:1%}.sumIn .sumT td:nth-child(3){padding-left:14px}.sumIn h3{font-size:15.5px;margin:14px 0 4px}.sumIn ul{margin:0;padding-left:20px;font-size:15px}
 .sumBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.sumBtns button{padding:12px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;font-weight:700;cursor:pointer}.sumBtns #sumPrint{background:var(--ink);color:#fff}
-@media print{body>*:not(#sumModal){display:none!important}#sumModal{position:static;background:none;padding:0}.sumIn{max-width:none;padding:0}.sumBtns{display:none}}
+@media print{@page{size:A4;margin:14mm}body>*:not(#sumModal){display:none!important}#sumModal{position:static;background:none;padding:0}.sumIn{max-width:none;padding:0}.sumBtns{display:none}}
 .uses{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13.5px}.uz{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.uz span{color:var(--mut);font-size:13px}.uz b{font-size:16px}
 .uo{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}.uo span{background:var(--panel);border-radius:999px;padding:2px 8px;font-size:12.5px}
 .drawbtn{width:100%;padding:10px;border:1.5px dashed var(--blue);border-radius:12px;background:#eef3ff;color:var(--blue);font-weight:700;cursor:pointer;font-size:14.5px}
@@ -566,22 +566,37 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
   if(S.red==='merit')need.push('국가유공자 확인서 또는 장애인증명서');if(S.red==='dis')need.push('피해사실확인서');
   if(S.kind==='split')need.push('분할 허가가 필요한 땅이면 허가 관련 서류');if(S.kind==='conv')need.push('산지전용·개발행위 허가서 또는 준공 서류');
   let bk='';if(BASKET.length){const B=basketCalc();bk=`<h3>담은 땅 ${BASKET.length}건 합계 ${won(B.all)} (부가세 포함)</h3><ul>${B.items.map(x=>`<li>${esc(x.it.parcel?x.it.parcel.addr:'직접 입력')} · ${esc(x.r.K.n)} · ${won(Math.round(x.tot*1.1))}</li>`).join('')}</ul>`}
-  return `<h2>측량 상담 메모</h2><div class="sd">${ds} · 내땅 보이소에서 계산한 참고용 예상 금액이에요</div>
-  <table><tbody>
-   <tr><td>땅</td><td><b>${esc(p?p.addr:'직접 입력한 땅')}</b>${p&&p.road?`<br>도로명 ${esc(p.road)}`:''}</td></tr>
-   ${p&&p.jimok?`<tr><td>지목</td><td>${esc(p.jimok)}</td></tr>`:''}
-   <tr><td>면적</td><td>${S.area.toLocaleString()}㎡ (약 ${Math.round(S.area/3.3058).toLocaleString()}평)</td></tr>
-   ${S.kind!=='conv'?`<tr><td>공시지가</td><td>${S.price.toLocaleString()}원/㎡${p&&p.year?' ('+esc(p.year)+'년)':''}</td></tr>`:''}
-   <tr><td>측량</td><td><b>${esc(r.K.n)}</b><br>${esc(det)}${S.desig?` · ${S.desig===.4?'면적':'선'} 지정`:''}${S.red!=='none'?' · '+esc(REDS.find(x=>x[0]===S.red)[1])+' 감면':''}</td></tr>
+  // ── 땅 정보 압축
+  const pct=(a,b)=>b?((a-b)/b*100):null,fp=v=>v==null?'':(v>=0?'+':'')+v.toFixed(1)+'%';
+  const H=p&&p.hist&&p.hist.length>1?p.hist:null,hl=H&&H[H.length-1];
+  const trend=H?` · 작년보다 ${fp(pct(hl[1],H[H.length-2][1]))}, ${H[0][0]}년보다 ${fp(pct(hl[1],H[0][1]))}`:'';
+  const isZ=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
+  const U=p&&p.uses||[],zones=U.filter(x=>isZ(x[0])).map(x=>x[0]),etc=U.filter(x=>!isZ(x[0])).map(x=>x[0]);
+  const scl=p&&p.scale?(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale):'';
+  const B=p&&p.bld&&p.bld.length?p.bld:null,b0=B&&B[0];
+  const bTxt=b0?[b0.name||'',b0.use||'',b0.year?'사용승인 '+b0.year:'',b0.area?'연면적 '+(+b0.area).toLocaleString(undefined,{maximumFractionDigits:1})+'㎡':'',b0.fl?'지상 '+b0.fl+'층':''].filter(Boolean).join(' · ')+(B.length>1?` 외 ${B.length-1}동`:''):'';
+  const MV=p&&p.mv&&p.mv.length?p.mv.slice(0,3):null;
+  const row=(k,v)=>v?`<tr><td>${k}</td><td colspan="3">${v}</td></tr>`:'';
+  const row2=(k1,v1,k2,v2)=>`<tr><td>${k1}</td><td>${v1||'-'}</td><td>${k2}</td><td>${v2||'-'}</td></tr>`;
+  return `<h2>내 땅 요약 · 측량 상담 메모</h2><div class="sd">${ds} · 내땅 보이소 (공개 자료 기준, 참고용)</div>
+  <table class="sumT"><tbody>
+   <tr><td>땅</td><td colspan="3"><b>${esc(p?p.addr:'직접 입력한 땅')}</b>${p&&p.road?` <span class="hint">· 도로명 ${esc(p.road)}</span>`:''}</td></tr>
+   ${row2('지목',esc(p&&p.jimok||''),'면적',`${S.area.toLocaleString()}㎡ (약 ${Math.round(S.area/3.3058).toLocaleString()}평)`)}
+   ${p?row2('소유 구분',esc(p.own||''),'축척',esc(scl)):''}
+   ${row('공시지가',`<b>${S.price.toLocaleString()}원/㎡</b>${p&&p.year?' ('+esc(p.year)+'년)':''}${esc(trend)}`)}
+   ${row('용도지역',zones.length?`<b>${esc(zones.join(', '))}</b>${etc.length?`<br><span class="hint">${esc(etc.slice(0,6).join(' · '))}${etc.length>6?` 외 ${etc.length-6}건`:''}</span>`:''}`:'')}
+   ${row('건물',esc(bTxt))}
+   ${row('토지 이동',MV?MV.map(x=>`${esc(x.d||'-')} ${esc(x.why)}`).join('<br>')+(p.mv.length>3?`<span class="hint"> 외 ${p.mv.length-3}건</span>`:''):'')}
   </tbody></table>
-  <div class="sumBig">예상 수수료 (부가세 포함)<br><b>${won(r.all)}</b><div class="hint">수수료 ${won(r.tot)} + 부가세 ${won(r.vat)} · 경계점표지 값 별도</div></div>
+  <div class="sumBig"><div class="sbk">${esc(r.K.n)}<span class="hint"> · ${esc(det)}${S.desig?` · ${S.desig===.4?'면적':'선'} 지정`:''}${S.red!=='none'?' · '+esc(REDS.find(x=>x[0]===S.red)[1])+' 감면':''}</span></div>
+   <b>${won(r.all)}</b> <span class="hint">부가세 포함 (수수료 ${won(r.tot)} + 부가세 ${won(r.vat)}) · 경계점표지 값 별도</span></div>
   ${bk}
-  <h3>신청·문의</h3><ul>
-   ${lx?`<li>측량 신청 : LX ${esc(lx.name)} ${esc(lx.tel)}<br><span class="hint">${esc(lx.addr)}</span></li>`:'<li>측량 신청 : LX 고객센터 1588-7704</li>'}
-   <li>분할 허가·지적공부 : ${esc(A&&A.office||'시·군·구청')} 지적 담당 부서 (대표번호로 문의)</li>
-   <li>인터넷 신청 : LX 지적측량신청포털 baro.lx.or.kr</li></ul>
-  <h3>챙겨 갈 것</h3><ul>${need.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-  <p class="hint">지도에 보이는 선은 연속지적도(참고용)예요. 실제 경계와 수수료는 측량 신청과 접수 때 확정돼요.</p>`}
+  <table class="sumT"><tbody>
+   ${row('측량 신청',lx?`LX ${esc(lx.name)} <b>${esc(lx.tel)}</b><br><span class="hint">${esc(lx.addr)} · 인터넷 baro.lx.or.kr</span>`:'LX 고객센터 <b>1588-7704</b> · 인터넷 baro.lx.or.kr')}
+   ${row('허가·공부',`${esc(A&&A.office||'시·군·구청')} 지적 담당 부서 (대표번호로 문의)`)}
+   ${row('챙길 것',esc(need.join(' · ')))}
+  </tbody></table>
+  <p class="hint">지도 선은 연속지적도(참고용)예요. 실제 경계와 수수료는 측량 신청·접수 때 확정되고, 이 메모는 증명서로 쓸 수 없어요.</p>`}
 $('bSum').onclick=()=>{$('sumBody').innerHTML=sumHTML();$('sumModal').hidden=false;document.body.style.overflow='hidden'};
 $('sumClose').onclick=()=>{$('sumModal').hidden=true;document.body.style.overflow=''};
 $('sumModal').onclick=e=>{if(e.target.id==='sumModal')$('sumClose').onclick()};
