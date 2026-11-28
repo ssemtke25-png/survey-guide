@@ -70,6 +70,7 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .seg button[aria-pressed=true] small{color:#fff;opacity:.8}
 .seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .note2{border-left:4px solid var(--blue);background:#eef3ff;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5}.note2 b{display:block;color:var(--blue);font-size:14.5px}.note2 button{margin-top:6px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:6px 12px;cursor:pointer}
+.lcg{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:4px;font-size:13.5px}.lcg span{color:var(--mut);margin-right:6px;font-size:12.5px}
 .bl{padding:4px 0;border-top:1px dashed var(--line)}.bl:first-of-type{border-top:0}.bl span{color:var(--mut);font-size:13px}
 .mv summary{cursor:pointer;list-style:none}.mv summary::-webkit-details-marker{display:none}.mv table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}.mv th{color:var(--mut);font-weight:400;text-align:left;border-bottom:1px solid var(--line);padding:3px 2px}.mv td{padding:3px 2px;border-bottom:1px dashed var(--line);vertical-align:top}.mv td:not(:nth-child(2)),.mv th{white-space:nowrap}.mv td:nth-child(2){padding:3px 6px}
 .hist{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.hh2{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:13px}.hh2>b{font-size:14px}
@@ -297,6 +298,7 @@ const GLOSS={
  use:['용도지역','국토계획법에 따라 땅을 주거·상업·공업·녹지·관리·농림 등으로 나눈 것이에요. 지을 수 있는 건물이 달라져요.'],
  cad:['연속지적도','지적도를 이어 붙여 지도에 겹친 참고 자료예요. 법적 효력이 없어서 실제 경계는 측량으로 확인해요.'],
  own:['소유 구분','개인·국유지·도유지·시군유지·법인처럼 누가 가진 땅인지 종류만 보여 줘요. 소유자 이름은 개인정보라서 보여 주지 않아요. 국·공유지는 관리하는 기관이 측량을 신청해요.'],
+ lc:['토지 특성','시·군·구가 매년 공시지가를 정하려고 땅마다 조사하는 내용이에요. 도로 접면은 땅이 얼마나 넓은 길에 붙어 있는지(광대로·중로·소로·세로), 맹지는 길에 붙어 있지 않은 땅이에요.'],
  daejang:['토지대장·임야대장','땅의 지번·지목·면적을 적은 공적 장부예요. 지번 앞에 \'산\'이 붙으면 임야대장에 있는 땅이에요.']};
 const py=a=>Math.round((+a||0)/3.3058).toLocaleString();
 const qm=k=>`<button type="button" class="qm" data-g="${k}" aria-label="${GLOSS[k][0]} 설명">?</button>`;
@@ -315,6 +317,9 @@ $('kinds').onclick=e=>{const b=e.target.closest('button');if(b){S.kind=b.dataset
 // ---------- 건물 정보 · 토지 이동 연혁 (브이월드 국가중점데이터, 공개 정보)
 const pickF=(o,res)=>{for(const re of res){const k=Object.keys(o).find(k=>re.test(k)&&o[k]!==''&&o[k]!=null);if(k)return o[k]}return ''};
 const ymd=v=>{v=String(v||'').replace(/[^0-9]/g,'');return v.length>=8?`${v.slice(0,4)}.${v.slice(4,6)}.${v.slice(6,8)}`:v.length>=6?`${v.slice(0,4)}.${v.slice(4,6)}`:v.length===4?v:''};
+function lcHTML(c){const it=(k,v,warn)=>v?`<div><span>${k}</span><b${warn?' style="color:var(--red)"':''}>${esc(v)}</b></div>`:'';
+  return `<div class="hist lc"><div class="hh2"><b>토지 특성</b><span class="hint">${c.year?esc(c.year)+'년 ':''}토지특성조사 기준 ${qm('lc')}</span></div><div class="lcg">
+  ${it('이용 상황',c.use)}${it('도로 접면',c.road,/맹지/.test(c.road))}${it('지형 높이',c.hg)}${it('지형 모양',c.frm)}</div>${/맹지/.test(c.road)?'<div class="hint" style="color:var(--red)">맹지 : 도로에 붙어 있지 않은 땅이에요. 건축 허가가 어려울 수 있어요.</div>':''}</div>`}
 function bldHTML(b){return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">건축물대장 기준</span></div>`+
   b.slice(0,5).map(x=>`<div class="bl"><b>${esc(x.name||x.use||'건물')}</b>${x.name&&x.use?` <span>${esc(x.use)}</span>`:''}<div class="hint">${[x.year?'사용승인 '+x.year:'',x.area?'연면적 '+(+x.area).toLocaleString(undefined,{maximumFractionDigits:2})+'㎡ ('+Math.round(x.area*0.3025).toLocaleString()+'평)':'',x.fl?'지상 '+x.fl+'층'+(x.ufl&&+x.ufl?' · 지하 '+x.ufl+'층':''):'',x.str||''].filter(Boolean).join(' · ')}</div></div>`).join('')+
   (b.length>5?`<div class="hint">외 ${b.length-5}동</div>`:'')+`</div>`}
@@ -322,12 +327,15 @@ function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x
   return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d?m[0].d+' ':'')}${esc(m[0].why)}</span></summary>
   <table><thead><tr><th>날짜</th><th>사유</th><th>지목</th><th style="text-align:right">면적</th></tr></thead><tbody>${rows.join('')}</tbody></table></details>`}
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
-const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'];
+const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'],API_LC=['getLandCharacteristics','getLandCharacteristicsAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
 async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
 async function extraInfo(p){const log=PROBE?[]:null;
-  let [b,m]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log)]);
+  let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log)]);
+  if(lc){const o=lc.slice().sort((a,b)=>String(pickF(b,[/stdrYear/i])).localeCompare(String(pickF(a,[/stdrYear/i]))))[0];
+    p.lc={year:String(pickF(o,[/stdrYear/i])||''),use:String(pickF(o,[/ladUseSittn.*Nm$/i,/UseSittn.*Nm$/i])||''),hg:String(pickF(o,[/tpgrphHg.*Nm$/i])||''),
+      frm:String(pickF(o,[/tpgrphFrm.*Nm$/i])||''),road:String(pickF(o,[/roadSide.*Nm$/i])||'')};if(!(p.lc.use||p.hg||p.lc.road||p.lc.hg))p.lc=null}
   if(b)p.bld=b.map(o=>({name:String(pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i])||'').replace(/^.*대장$/,'').trim(),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
     year:ymd(pickF(o,[/useConfm.*De$/i,/useApr.*/i,/confm.*De$/i,/^useYmd/i])),area:+pickF(o,[/^totar$/i,/tot.*Ar(ea)?$/i])||0,
     fl:pickF(o,[/^(grnd|ground).*(flr|floor)/i,/grndFlrCnt/i]),ufl:pickF(o,[/^(ugrnd|under).*(flr|floor)/i]),str:pickF(o,[/strct.*Nm$/i])})).filter(x=>x.name||x.use||x.year||x.area);
@@ -354,6 +362,7 @@ function infoHTML(){
   return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:p.roadNone?`<div class="road" style="color:var(--mut)">도로명주소 없음 <span style="font-size:12px">(건물이 없는 땅은 도로명주소가 없어요)</span></div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
+    +(p&&p.lc?lcHTML(p.lc):'')
     +(p&&p.bld&&p.bld.length?bldHTML(p.bld):'')
     +(p&&p.mv&&p.mv.length?mvHTML(p.mv):'')
     +(p&&p.probe?`<details class="hist" open><summary>API 점검 결과 (probe)</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:340px;overflow:auto">${esc(p.probe)}</pre></details>`:'')
@@ -585,6 +594,7 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
    ${p?row2('소유 구분',esc(p.own||''),'축척',esc(scl)):''}
    ${row('공시지가',`<b>${S.price.toLocaleString()}원/㎡</b>${p&&p.year?' ('+esc(p.year)+'년)':''}${esc(trend)}`)}
    ${row('용도지역',zones.length?`<b>${esc(zones.join(', '))}</b>${etc.length?`<br><span class="hint">${esc(etc.slice(0,6).join(' · '))}${etc.length>6?` 외 ${etc.length-6}건`:''}</span>`:''}`:'')}
+   ${p&&p.lc?row('토지 특성',esc([p.lc.use,p.lc.road?(/맹지/.test(p.lc.road)?p.lc.road:'도로 접면 '+p.lc.road):'',p.lc.hg,p.lc.frm].filter(Boolean).join(' · '))):''}
    ${row('건물',esc(bTxt))}
    ${row('토지 이동',MV?MV.map(x=>`${esc(x.d||'-')} ${esc(x.why)}`).join('<br>')+(p.mv.length>3?`<span class="hint"> 외 ${p.mv.length-3}건</span>`:''):'')}
   </tbody></table>
