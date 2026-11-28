@@ -351,7 +351,10 @@ const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o
 const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'],API_LC=['getLandCharacteristics','getLandCharacteristicsAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
 // 돌려주는 값 : 배열(자료 있음) · null(정상인데 자료 없음) · undefined(통신 실패 → 저장하지 않음)
-async function tryNed(list,pnu,log){let fail=false;for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d),ok=!a&&/totalCount/.test(JSON.stringify(d||{}));
+// 브이월드가 가끔 이 API들에만 CORS 허용 헤더를 빼먹어서(같은 요청이 될 때도, 안 될 때도 있음) 조금 쉬었다가 두 번 더 시도
+const nap=ms=>new Promise(r=>setTimeout(r,ms));
+async function nedRetry(op,q){let e0;for(const w of [0,1200,3000]){if(w)await nap(w);try{const d=await window.__ned(op,q,true);if(firstArr(d)||/totalCount/.test(JSON.stringify(d||{})))return d;e0=new Error('빈 응답')}catch(e){e0=e}}throw e0}
+async function tryNed(list,pnu,log){let fail=false;for(const op of list){try{const d=await nedRetry(op,{pnu,numOfRows:'100'});const a=firstArr(d),ok=!a&&/totalCount/.test(JSON.stringify(d||{}));
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a;if(ok)return null;fail=true}catch(e){fail=true;if(log)log.push(op+' → 오류 '+e.message)}}return fail?undefined:null}
 async function extraInfo(p){const log=PROBE?[]:null;
   let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log),aptInfo(p).catch(()=>{})]);
@@ -366,11 +369,14 @@ async function extraInfo(p){const log=PROBE?[]:null;
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
+  p.xiFail=(b===undefined&&!p.bld)||(m===undefined&&!p.mv)||(lc===undefined&&!p.lc);
   if(p.bld&&!p.bld.length)p.bld=null;if(p.mv&&!p.mv.length)p.mv=null;
   if(log)p.probe=log.join('\n\n');
   // 하나라도 통신이 실패했으면 '다 받았음(xi)' 표시를 하지 않음 → 다음에 다시 받아 옴 (빈 칸이 7일 동안 굳는 것 방지)
   if(!log&&p.pnu){const v={};if(b!==undefined)v.bld=p.bld||null;if(m!==undefined)v.mv=p.mv||null;if(lc!==undefined)v.lc=p.lc||null;
-    v.xi=(b!==undefined&&m!==undefined&&lc!==undefined)?1:0;lcPut(p.pnu,v)}}
+    v.xi=(b!==undefined&&m!==undefined&&lc!==undefined)?1:0;if(window.__lcPut)window.__lcPut(p.pnu,v)}}
+document.addEventListener('click',e=>{if(!e.target.closest('#xiRetry'))return;const p=S.parcel;if(!p)return;e.target.textContent='받아 오는 중…';e.target.disabled=true;
+  extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{if(S.parcel===p)render()})});
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
   return `<div class="uses"><div class="uz"><span>용도지역 ${qm('use')}</span><b>${z.length?z.map(x=>esc(x[0])+(x[1]&&x[1]!=='포함'?` <small>(${esc(x[1])})</small>`:'')).join(', '):'확인 안 됨'}</b></div>
@@ -392,6 +398,7 @@ function infoHTML(){
     +(p&&p.lc?lcHTML(p.lc):'')
     +(p&&p.bld&&p.bld.length?bldHTML(p.bld):'')
     +(p&&p.mv&&p.mv.length?mvHTML(p.mv):'')
+    +(p&&p.xiFail?`<div class="hint" style="margin-top:8px">건물·토지 특성·이동 연혁을 브이월드에서 못 받아 왔어요. <button type="button" class="linkb" id="xiRetry" style="text-decoration:underline;color:var(--blue);background:none;border:0;padding:0;font:inherit;cursor:pointer">다시 받아 오기</button></div>`:'')
     +(p&&p.probe?`<details class="hist" open><summary>API 점검 결과 (probe)</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:340px;overflow:auto">${esc(p.probe)}</pre></details>`:'')
     :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
 function pBoxHTML(){
@@ -801,12 +808,13 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
 // 국가중점데이터(NED) : 토지대장 면적·지목, 최신 개별공시지가
 // 브라우저에서 바로(fetch) 부르고, 막히면 JSONP로 다시 부름
 // JSONP 방식은 '기억'하지 않음 : 한 번 느려서 JSONP로 바뀌면 건물·토지특성·이동연혁(JSONP 미지원)이 그 창에서 계속 안 나오던 문제
-window.__ned=(...a)=>ned(...a);async function ned(path,params){
+window.__ned=(...a)=>ned(...a);async function ned(path,params,fetchOnly){
   const q=new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',numOfRows:'50',pageNo:'1'},params));
   const url=`https://api.vworld.kr/ned/data/${path}?`;
   let M='';try{M=sessionStorage.getItem('sg_nedm2')||''}catch(e){}
   if(M!=='j'){try{const ac=new AbortController(),tt=setTimeout(()=>ac.abort(),6000);const r=await fetch(url+q,{signal:ac.signal});clearTimeout(tt);
-    if(r.ok){const j=await r.json();try{sessionStorage.setItem('sg_nedm2','f')}catch(e){}return j}}catch(e){}}
+    if(r.ok){const j=await r.json();try{sessionStorage.setItem('sg_nedm2','f')}catch(e){}return j}}catch(e){if(fetchOnly)throw e}}
+  if(fetchOnly)throw new Error('대장 연결 실패');
   return new Promise((res,rej)=>{const cb='__ned'+(++seq),sc=document.createElement('script');q.set('callback',cb);
     const t=setTimeout(()=>{window[cb]=()=>delete window[cb];sc.remove();rej(new Error('대장 응답 없음'))},8000);
     window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();res(d)};
@@ -816,7 +824,7 @@ const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(c
 // 한 번 본 땅 정보는 이 기기에 7일 저장 (브이월드 요청 줄이기)
 const LC='sg_ledger2',LDAY=7*864e5;
 const lcGet=pnu=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}')[pnu];return o&&Date.now()-o.t<LDAY?o:null}catch(e){return null}};
-const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({},o[pnu]||{},v,{t:Date.now()});const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
+window.__lcPut=(...a)=>lcPut(...a);const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({},o[pnu]||{},v,{t:Date.now()});const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
 async function ledger(p){
   const pnu=p.pnu,same=()=>S.parcel&&S.parcel.pnu===pnu;let rq=0;const soon=()=>{if(same()&&!rq)rq=requestAnimationFrame(()=>{rq=0;if(same())render()})};
   const c=lcGet(pnu);
