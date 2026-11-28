@@ -1,17 +1,21 @@
 name: 아파트 실거래가 모으기
 on:
   schedule:
-    - cron: '0 18 4 * *'   # 매달 5일 새벽 3시(한국시간)
+    - cron: '17 18 * * *'   # 매일 새벽 3시 17분(한국시간) : 이어 받을 게 있으면 이어서, 없으면 매달 5일에만 최근 3개월 갱신
   workflow_dispatch:
     inputs:
       months:
-        description: '다시 받을 개월 수 (처음에는 36)'
-        default: '3'
+        description: '새로 모을 개월 수 (전국 처음은 36, 이어 받기는 auto)'
+        default: 'auto'
 permissions:
   contents: write
+concurrency:
+  group: apt-fetch
+  cancel-in-progress: false
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,11 +24,15 @@ jobs:
       - name: 실거래가 받기
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-        run: python scripts/apt_fetch.py ${{ github.event.inputs.months || '3' }}
+          APT_BUDGET: '9000'
+        run: python scripts/apt_fetch.py ${{ github.event.inputs.months || 'auto' }}
       - name: 저장
+        if: always()
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add data/apt
-          git diff --cached --quiet || git commit -m "아파트 실거래가 갱신 $(date +%Y-%m-%d)"
-          git push
+          git add -A data/apt
+          git diff --cached --quiet && exit 0
+          git commit -q -m "아파트 실거래가 갱신 $(date +%Y-%m-%d)"
+          git pull --rebase -q
+          git push -q
