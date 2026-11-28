@@ -800,15 +800,16 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
   document.head.appendChild(s)})}
 // 국가중점데이터(NED) : 토지대장 면적·지목, 최신 개별공시지가
 // 브라우저에서 바로(fetch) 부르고, 막히면 JSONP로 다시 부름
+// JSONP 방식은 '기억'하지 않음 : 한 번 느려서 JSONP로 바뀌면 건물·토지특성·이동연혁(JSONP 미지원)이 그 창에서 계속 안 나오던 문제
 window.__ned=(...a)=>ned(...a);async function ned(path,params){
   const q=new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',numOfRows:'50',pageNo:'1'},params));
   const url=`https://api.vworld.kr/ned/data/${path}?`;
-  let M='';try{M=sessionStorage.getItem('sg_nedm')||''}catch(e){}
+  let M='';try{M=sessionStorage.getItem('sg_nedm2')||''}catch(e){}
   if(M!=='j'){try{const ac=new AbortController(),tt=setTimeout(()=>ac.abort(),6000);const r=await fetch(url+q,{signal:ac.signal});clearTimeout(tt);
-    if(r.ok){const j=await r.json();try{sessionStorage.setItem('sg_nedm','f')}catch(e){}return j}}catch(e){}}
+    if(r.ok){const j=await r.json();try{sessionStorage.setItem('sg_nedm2','f')}catch(e){}return j}}catch(e){}}
   return new Promise((res,rej)=>{const cb='__ned'+(++seq),sc=document.createElement('script');q.set('callback',cb);
     const t=setTimeout(()=>{window[cb]=()=>delete window[cb];sc.remove();rej(new Error('대장 응답 없음'))},8000);
-    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();if(M!=='f')try{sessionStorage.setItem('sg_nedm','j')}catch(e){}res(d)};
+    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();res(d)};
     sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();rej(new Error('대장 연결 실패'))};
     sc.src=url+q;document.head.appendChild(sc)})}
 const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(const v of Object.values(o))deep(v,k,out)}return out};
