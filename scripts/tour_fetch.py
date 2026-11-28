@@ -35,18 +35,22 @@ def call(op, **params):
             calls += 1
             with urllib.request.urlopen(url, timeout=30) as r: txt = r.read().decode('utf-8', 'replace'); break
         except Exception as e:
+            if getattr(e, 'code', None) == 429: print('오늘 호출 한도(429 Too Many Requests)에 닿았어요.'); raise OutOfBudget()
             print('  재시도', op, e); time.sleep(3 + 5 * t)
-    else: raise SystemExit(f'{op} 받기 실패')
+    else:
+        print(f'{op} 응답이 계속 없어서 오늘은 여기까지 받고 저장해요'); raise OutOfBudget()
     if call.first: print('첫 응답 예시:', txt[:500]); call.first = False
     if 'LIMITED' in txt or 'EXCEEDS' in txt: print('오늘 호출 한도에 닿았어요.'); raise OutOfBudget()
     try: d = json.loads(txt)
     except ValueError:
         if VER == 0 and op == 'areaBasedList':
             print('새 판 응답이 이상해서 예전 판으로 바꿔요:', txt[:200].replace('\n', ' ')); VER = 1; return call(op, **params)
+        if op == 'detailCommon': print('소개글 응답이 이상해서 오늘은 여기까지:', txt[:300]); raise OutOfBudget()
         raise SystemExit(f'{op} 응답이 JSON이 아니에요 (인증키·활용신청 확인): {txt[:400]}')
     h = d.get('response', {}).get('header', {})
     if h.get('resultCode') not in ('0000', '00'):
         if h.get('resultCode') == '22': raise OutOfBudget()
+        if op == 'detailCommon': print('소개글 오류로 오늘은 여기까지:', h); raise OutOfBudget()
         raise SystemExit(f'{op} 오류 {h.get("resultCode")} {h.get("resultMsg")}')
     b = d['response'].get('body', {}); it = (b.get('items') or {})
     it = it.get('item', []) if isinstance(it, dict) else []
@@ -127,6 +131,8 @@ def main():
     db = st['items']; filled = 0
     try:
         stale = not st.get('listed') or (datetime.date.today() - datetime.date.fromisoformat(st['listed'])).days >= 25
+        # 받는 종류(음식점)나 칸(분류)이 늘었으면 목록을 다시 받음
+        stale = stale or any(ty not in {v.get('ty') for v in db.values()} for ty in TYPES) or any('c' not in v for v in db.values())
         if ARG == 'list' or stale:
             fetch_list(db); st['listed'] = datetime.date.today().isoformat()
         filled = fill_overview(db)
