@@ -77,7 +77,8 @@ def g(it, *names):
 
 class OutOfBudget(Exception): pass
 
-def call(sgg, ym, page, rows=1000):
+def call(sgg, ym, page, rows=1000, probe=False):
+    # probe=True : 코드가 있는지만 떠보기 (없는 코드는 04 오류가 오므로 오류면 None)
     global URL, calls
     if calls >= BUDGET: raise OutOfBudget()
     q = urllib.parse.urlencode({'serviceKey': KEY, 'LAWD_CD': sgg, 'DEAL_YMD': ym, 'numOfRows': rows, 'pageNo': page})
@@ -90,8 +91,13 @@ def call(sgg, ym, page, rows=1000):
     else: raise SystemExit(f'{sgg} {ym} 받기 실패')
     txt = x.decode('utf-8', 'replace')
     try: root = ET.fromstring(x)
-    except ET.ParseError: raise SystemExit(f'{sgg} {ym} 응답이 XML이 아니에요: {txt[:300]}')
+    except ET.ParseError:
+        if probe: return None
+        raise SystemExit(f'{sgg} {ym} 응답이 XML이 아니에요: {txt[:300]}')
     code = g(root, './/resultCode')
+    if probe:
+        if 'LIMITED' in txt or 'EXCEEDS' in txt or code == '22': raise OutOfBudget()
+        return root if code in ('00', '000') else None
     if not code and call.first and URL != URLS[-1] and '<returnReasonCode>' in txt:
         print('상세판 응답 이상 → 일반판으로 바꿔서 다시 받아요:', txt[:200].replace('\n', ' '))
         URL = URLS[URLS.index(URL) + 1]; return call(sgg, ym, page, rows)
@@ -146,8 +152,8 @@ def codes():
     found = []; ym = months(2)[1]
     for c in CAND:
         if c in SGG: continue
-        root = call(c, ym, 1, rows=1)
-        if int(g(root, './/totalCount') or 0) > 0: found.append(c); print('새 시군구 코드 발견', c)
+        root = call(c, ym, 1, rows=1, probe=True)
+        if root is not None and int(g(root, './/totalCount') or 0) > 0: found.append(c); print('새 시군구 코드 발견', c)
         time.sleep(0.1)
     out = SGG + found
     json.dump({'checked': datetime.date.today().isoformat(), 'added': found, 'codes': out}, open(CODES, 'w', encoding='utf-8'), ensure_ascii=False)
@@ -194,9 +200,12 @@ def main():
         prog = {'months': months(int(ARG)), 'done': []}   # 새로 시작
     yms = prog['months']
     try:
-        todo = [c for c in codes() if c not in prog['done']]
+        known = json.load(open(CODES, encoding='utf-8'))['codes'] if os.path.exists(CODES) else SGG
+        todo = [c for c in known if c not in prog['done']]
         print(f'{len(yms)}개월 · 남은 시군구 {len(todo)}곳 · 이번 실행 호출 한도 {BUDGET}')
-        for sgg in todo:
+        extra_done = False
+        while todo:
+            sgg = todo.pop(0)
             if calls + len(yms) > BUDGET: raise OutOfBudget()
             rows = []
             for ym in yms:
@@ -204,6 +213,8 @@ def main():
             n = save_sgg(sgg, rows, set(yms)); prog['done'].append(sgg)
             json.dump(prog, open(PROG, 'w', encoding='utf-8'), ensure_ascii=False)
             print(sgg, '새로', len(rows), '건 · 보관', n, '건 · 누적 호출', calls)
+            if not extra_done:   # 진짜 코드로 첫 응답을 확인한 뒤에 새 코드 찾기
+                extra_done = True; todo += [c for c in codes() if c not in SGG and c not in prog['done'] and c not in todo]
     except OutOfBudget:
         json.dump(prog, open(PROG, 'w', encoding='utf-8'), ensure_ascii=False)
         print(f'이번엔 여기까지 (호출 {calls}번). 끝낸 시군구 {len(prog["done"])}곳. 다음 실행에서 이어서 받아요.')

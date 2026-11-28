@@ -387,9 +387,15 @@ async function extraInfo(p){const log=PROBE?[]:null;
     const B=bi.filter(f=>{const c=cen(f.geometry);return c&&rings.some(r=>inR(c,r))}).map(f=>f.properties).filter(o=>o.bld_nm||o.dong_nm||+o.totalarea>0);
     if(log)log.push(`건물 레이어 → 도로명건물 ${A.length}동 · 건물통합정보 ${B.length}동\n`+JSON.stringify([A[0],B[0]],null,1));
     const dn=v=>String(v||'').replace(/\s/g,'').replace(/동$/,''),nat=x=>String(x).replace(/\d+/g,n=>n.padStart(6,'0'));
-    let L=A.length?A.map(o=>{const nm=String(o.buld_nm||'').trim(),dg=String(o.buld_nm_dc||'').trim(),m=B.find(x=>dg&&dn(x.dong_nm)===dn(dg))||{};
-        return{g:1,name:[nm,dg].filter(Boolean).join(' ')||(o.rd_nm?o.rd_nm+' '+o.buld_no:''),use:'',year:ymd(String(m.useapr_day||'')),area:+m.totalarea||0,fl:+o.gro_flo_co?o.gro_flo_co:(+m.grnd_flr?m.grnd_flr:''),ufl:m.ugrnd_flr,str:''}})
-      :B.map(o=>({g:1,name:[o.bld_nm,o.dong_nm].filter(Boolean).join(' ').trim(),use:'',year:ymd(String(o.useapr_day||'')),area:+o.totalarea||0,fl:+o.grnd_flr?o.grnd_flr:'',ufl:o.ugrnd_flr,str:''}));
+    // 두 레이어를 동 이름으로 합침 : 도로명건물에 없는 동(주소가 따로 없는 동)도 건물통합정보에서 채움
+    const cx=A.map(o=>String(o.buld_nm||'').trim()).find(Boolean)||B.map(o=>String(o.bld_nm||'').trim()).find(Boolean)||'';
+    const mk=(nm,dg,m,fl)=>({g:1,name:[nm||(dg?cx:''),dg].filter(Boolean).join(' ').trim(),use:'',year:ymd(String(m.useapr_day||'')),area:+m.totalarea||0,fl,ufl:m.ugrnd_flr,str:''});
+    let L=[],used=new Set();
+    A.forEach(o=>{const dg=String(o.buld_nm_dc||'').trim(),m=B.find(x=>dg&&dn(x.dong_nm)===dn(dg))||{};if(m.dong_nm)used.add(m);
+      L.push(mk(String(o.buld_nm||'').trim()||(o.rd_nm?o.rd_nm+' '+o.buld_no:''),dg,m,+o.gro_flo_co?o.gro_flo_co:(+m.grnd_flr?m.grnd_flr:'')))});
+    const have=new Set(L.map(x=>dn(x.name.split(' ').pop())));
+    B.forEach(o=>{if(used.has(o))return;const dg=String(o.dong_nm||'').trim();if(dg&&have.has(dn(dg)))return;if(dg)have.add(dn(dg));
+      L.push(mk(String(o.bld_nm||'').trim(),dg,o,+o.grnd_flr?o.grnd_flr:''))});
     L=L.filter(x=>x.name||x.area||x.fl).sort((a,b)=>nat(a.name).localeCompare(nat(b.name)));
     if(L.length){p.bld=L;if(b===undefined)b=null}}catch(e){if(log)log.push('건물 레이어 → 오류 '+e.message)}}
   p.xiFail=(b===undefined&&!p.bld)||(m===undefined&&!p.mv)||(lc===undefined&&!p.lc);
@@ -845,7 +851,7 @@ window.__ned=(...a)=>ned(...a);async function ned(path,params){
   try{const r=await fetch(url+q,{signal:ac.signal});if(!r.ok)throw new Error('대장 응답 오류');return await r.json()}finally{clearTimeout(tt)}}
 const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(const v of Object.values(o))deep(v,k,out)}return out};
 // 한 번 본 땅 정보는 이 기기에 7일 저장 (브이월드 요청 줄이기)
-const LC='sg_ledger2',LDAY=7*864e5;
+const LC='sg_ledger3',LDAY=7*864e5;
 const lcGet=pnu=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}')[pnu];return o&&Date.now()-o.t<LDAY?o:null}catch(e){return null}};
 window.__lcPut=(...a)=>lcPut(...a);const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({},o[pnu]||{},v,{t:Date.now()});const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
 async function ledger(p){
