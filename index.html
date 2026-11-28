@@ -379,11 +379,11 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
 function infoHTML(){
   const p=S.parcel;
   return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:p.roadNone?`<div class="road" style="color:var(--mut)">도로명주소 없음 <span style="font-size:12px">(건물이 없는 땅은 도로명주소가 없어요)</span></div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+    +(p&&p.apt?aptHTML(p.apt):'')
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     +(p&&p.lc?lcHTML(p.lc):'')
     +(p&&p.bld&&p.bld.length?bldHTML(p.bld):'')
-    +(p&&p.apt?aptHTML(p.apt):'')
     +(p&&p.mv&&p.mv.length?mvHTML(p.mv):'')
     +(p&&p.probe?`<details class="hist" open><summary>API 점검 결과 (probe)</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:340px;overflow:auto">${esc(p.probe)}</pre></details>`:'')
     :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
