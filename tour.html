@@ -135,7 +135,9 @@ $('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest(
 $('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
 let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
 // 처음 화면 : 내 땅 화면에서 넘어오면 그 자리(#lat,lng), 아니면 경북도청 근처
-const goHash=()=>{const h=location.hash.slice(1).split(',').map(Number);if(h.length===2&&h.every(isFinite))map.setView(h,13)};goHash();addEventListener('hashchange',goHash);
+// 주소 뒤 #위도,경도(,관광지번호) : 그 자리로 가고, 번호가 있으면 그곳 설명창까지 열기
+const goHash=()=>{const p=decodeURIComponent(location.hash.slice(1)).split(','),h=[+p[0],+p[1]];if(!(p.length>=2&&h.every(isFinite)))return;
+  want=p[2]||null;map.setView(h,want?Math.max(map.getZoom(),15):13);clearTimeout(tm);tm=setTimeout(load,250)};goHash();addEventListener('hashchange',goHash);
 load();
 })();
 </script>
