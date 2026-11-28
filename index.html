@@ -350,8 +350,9 @@ function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
 const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'],API_LC=['getLandCharacteristics','getLandCharacteristicsAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
-async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d),ok=!a&&/totalCount/.test(JSON.stringify(d||{}));
-    if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a;if(ok)return null}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
+// 돌려주는 값 : 배열(자료 있음) · null(정상인데 자료 없음) · undefined(통신 실패 → 저장하지 않음)
+async function tryNed(list,pnu,log){let fail=false;for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d),ok=!a&&/totalCount/.test(JSON.stringify(d||{}));
+    if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a;if(ok)return null;fail=true}catch(e){fail=true;if(log)log.push(op+' → 오류 '+e.message)}}return fail?undefined:null}
 async function extraInfo(p){const log=PROBE?[]:null;
   let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log),aptInfo(p).catch(()=>{})]);
   if(lc){const o=lc.slice().sort((a,b)=>String(pickF(b,[/stdrYear/i])).localeCompare(String(pickF(a,[/stdrYear/i]))))[0];
@@ -366,7 +367,9 @@ async function extraInfo(p){const log=PROBE?[]:null;
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
   if(log)p.probe=log.join('\n\n');
-  if(!log&&p.pnu)lcPut(p.pnu,{xi:1,bld:p.bld||null,mv:p.mv||null,lc:p.lc||null})}
+  // 하나라도 통신이 실패했으면 '다 받았음(xi)' 표시를 하지 않음 → 다음에 다시 받아 옴 (빈 칸이 7일 동안 굳는 것 방지)
+  if(!log&&p.pnu){const v={};if(b!==undefined)v.bld=p.bld||null;if(m!==undefined)v.mv=p.mv||null;if(lc!==undefined)v.lc=p.lc||null;
+    v.xi=(b!==undefined&&m!==undefined&&lc!==undefined)?1:0;lcPut(p.pnu,v)}}
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
   return `<div class="uses"><div class="uz"><span>용도지역 ${qm('use')}</span><b>${z.length?z.map(x=>esc(x[0])+(x[1]&&x[1]!=='포함'?` <small>(${esc(x[1])})</small>`:'')).join(', '):'확인 안 됨'}</b></div>
@@ -819,7 +822,7 @@ async function ledger(p){
     for(const k of ['jimok','scale','price','year','hist','uses','road','own'])if(c[k]!=null)p[k]=c[k];
     if(c.price)S.price=c.price;if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}
     if(!p.road)roadAddr(p).then(()=>{if(S.parcel!==p)return;if(p.road)lcPut(pnu,Object.assign({},c,{road:p.road}));render();addrTip()});
-    if(c.xi&&!PROBE){for(const k of ['bld','mv','lc'])if(c[k])p[k]=c[k];aptInfo(p).then(()=>{if(S.parcel===p&&p.apt)render()}).catch(()=>{})}
+    if(c.xi&&!PROBE&&(c.bld||c.mv||c.lc)){for(const k of ['bld','mv','lc'])if(c[k])p[k]=c[k];aptInfo(p).then(()=>{if(S.parcel===p&&p.apt)render()}).catch(()=>{})}
     else extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
     if(PENDING){applyShare(PENDING);PENDING=null}render();return}
   const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
