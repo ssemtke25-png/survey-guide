@@ -342,7 +342,7 @@ function aptHTML(a){const R=a.rows,grp={};R.forEach(r=>{const k=Math.round(+r.a)
   <div class="hint" style="margin-top:8px">최근 거래</div><table><thead><tr><th>계약일</th><th>전용</th><th>층</th><th style="text-align:right">금액</th></tr></thead><tbody>${rec}</tbody></table>
   <div class="hint" style="margin-top:4px">국토교통부 실거래가 공개 자료 (${esc(a.upd||'')} 기준, 해제된 거래 제외) · 참고용</div></details>`}
 function bldHTML(b){const one=x=>`<div class="bl"><b>${esc(x.name||x.use||'건물')}</b>${x.name&&x.use?` <span>${esc(x.use)}</span>`:''}<div class="hint">${[x.year?'사용승인 '+x.year:'',x.area?'연면적 '+(+x.area).toLocaleString(undefined,{maximumFractionDigits:2})+'㎡ ('+Math.round(x.area*0.3025).toLocaleString()+'평)':'',x.fl?'지상 '+x.fl+'층'+(x.ufl&&+x.ufl?' · 지하 '+x.ufl+'층':''):'',x.str||''].filter(Boolean).join(' · ')}</div></div>`;
-  return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">${b[0].g?'건물통합정보 기준':'건축물대장 기준'}</span></div>`+b.slice(0,5).map(one).join('')+
+  return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">${b[0].g?'브이월드 건물정보 기준':'건축물대장 기준'}</span></div>`+b.slice(0,5).map(one).join('')+
   (b.length>5?`<details class="bmore"><summary class="hint" style="cursor:pointer;color:var(--blue);margin-top:6px">나머지 ${b.length-5}동 더 보기</summary>${b.slice(5,60).map(one).join('')}${b.length>60?`<div class="hint">외 ${b.length-60}동</div>`:''}</details>`:'')+`</div>`}
 function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x.why)}</td><td>${esc(x.jm||'')}</td><td style="text-align:right">${x.ar?(+x.ar).toLocaleString()+'㎡':''}</td></tr>`);
   return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d?m[0].d+' ':'')}${esc(m[0].why)}</span></summary>
@@ -369,19 +369,27 @@ async function extraInfo(p){const log=PROBE?[]:null;
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
-  // 아파트 등 집합건물은 NED 건물 API에 없음 → 브이월드 GIS건물통합정보(LT_C_BLDGINFO)에서 동별로 받기
-  if(!(p.bld&&p.bld.length)&&window.__vw&&p.pnu){try{const d=await window.__vw('data',{service:'data',version:'2.0',request:'getfeature',data:'LT_C_BLDGINFO',attrfilter:'pnu:=:'+p.pnu,size:'200',geometry:'false',attribute:'true',crs:'EPSG:4326'});
-    const fs=(((d||{}).response||{}).result||{}).featureCollection?d.response.result.featureCollection.features.map(f=>f.properties):[];const fs2=fs.filter(o=>o&&(o.bld_nm||o.dong_nm||+o.totalarea>0||+o.grnd_flr>0));
-    if(log)log.push('LT_C_BLDGINFO(pnu) → '+fs2.length+'/'+fs.length+'건\n'+JSON.stringify((fs2.length?fs2:fs).slice(0,2),null,1)+(fs.length?'':'\n'+JSON.stringify(d&&d.response).slice(0,300)));
-    if(fs2.length){const nat=x=>String(x).replace(/\d+/g,n=>n.padStart(6,'0'));
-      p.bld=fs2.map(o=>({g:1,name:[o.bld_nm,o.dong_nm].filter(Boolean).join(' ').trim(),use:'',year:ymd(String(o.useapr_day||'')),area:+o.totalarea||0,fl:+o.grnd_flr?o.grnd_flr:'',ufl:o.ugrnd_flr,str:''}))
-        .sort((a,b)=>nat(a.name).localeCompare(nat(b.name)));if(b===undefined)b=null}}catch(e){if(log)log.push('LT_C_BLDGINFO(pnu) → 오류 '+e.message)}}
+  // 아파트 등 집합건물은 NED 건물 API에 없음 → 브이월드 건물 레이어 두 개로 동별 정보 만들기
+  //  · LT_C_SPBD(도로명주소 건물) : 건물관리번호 앞 19자리 = PNU → 이 필지 건물만 정확히 (이름·동·지상층)
+  //  · LT_C_BLDGINFO(건물통합정보) : PNU 칸이 없어 건물 모양 중심이 필지 안에 있는지로 고름 (사용승인·연면적·지하층)
+  if(!(p.bld&&p.bld.length)&&window.__vw&&p.pnu&&window.__geom&&S.parcel===p){try{
+    const g=window.__geom,rings=(g.type==='Polygon'?[g.coordinates]:g.coordinates).map(pl=>pl[0]);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(const r of rings)for(const [x,y] of r){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
+    const inR=(pt,r)=>{let c=false;for(let i=0,k=r.length-1;i<r.length;k=i++){const[xi,yi]=r[i],[xk,yk]=r[k];if((yi>pt[1])!==(yk>pt[1])&&pt[0]<(xk-xi)*(pt[1]-yi)/(yk-yi)+xi)c=!c}return c};
+    const cen=geo=>{const r=geo&&(geo.type==='Polygon'?geo.coordinates[0]:geo.type==='MultiPolygon'?geo.coordinates[0][0]:null);if(!r)return null;let sx=0,sy=0;r.forEach(q=>{sx+=q[0];sy+=q[1]});return[sx/r.length,sy/r.length]};
+    const box=`BOX(${x0},${y0},${x1},${y1})`,get=(lay,geom)=>window.__vw('data',{service:'data',version:'2.0',request:'getfeature',data:lay,geomfilter:box,size:'1000',geometry:geom?'true':'false',attribute:'true',crs:'EPSG:4326'}).then(d=>{const r=d&&d.response;return r&&r.status==='OK'?r.result.featureCollection.features:[]}).catch(()=>[]);
+    const [sp,bi]=await Promise.all([get('LT_C_SPBD',false),get('LT_C_BLDGINFO',true)]);
+    const A=sp.map(f=>f.properties).filter(o=>String(o.bd_mgt_sn||'').startsWith(p.pnu));
+    const B=bi.filter(f=>{const c=cen(f.geometry);return c&&rings.some(r=>inR(c,r))}).map(f=>f.properties).filter(o=>o.bld_nm||o.dong_nm||+o.totalarea>0);
+    if(log)log.push(`건물 레이어 → 도로명건물 ${A.length}동 · 건물통합정보 ${B.length}동\n`+JSON.stringify([A[0],B[0]],null,1));
+    const dn=v=>String(v||'').replace(/\s/g,'').replace(/동$/,''),nat=x=>String(x).replace(/\d+/g,n=>n.padStart(6,'0'));
+    let L=A.length?A.map(o=>{const nm=String(o.buld_nm||'').trim(),dg=String(o.buld_nm_dc||'').trim(),m=B.find(x=>dg&&dn(x.dong_nm)===dn(dg))||{};
+        return{g:1,name:[nm,dg].filter(Boolean).join(' ')||(o.rd_nm?o.rd_nm+' '+o.buld_no:''),use:'',year:ymd(String(m.useapr_day||'')),area:+m.totalarea||0,fl:+o.gro_flo_co?o.gro_flo_co:(+m.grnd_flr?m.grnd_flr:''),ufl:m.ugrnd_flr,str:''}})
+      :B.map(o=>({g:1,name:[o.bld_nm,o.dong_nm].filter(Boolean).join(' ').trim(),use:'',year:ymd(String(o.useapr_day||'')),area:+o.totalarea||0,fl:+o.grnd_flr?o.grnd_flr:'',ufl:o.ugrnd_flr,str:''}));
+    L=L.filter(x=>x.name||x.area||x.fl).sort((a,b)=>nat(a.name).localeCompare(nat(b.name)));
+    if(L.length){p.bld=L;if(b===undefined)b=null}}catch(e){if(log)log.push('건물 레이어 → 오류 '+e.message)}}
   p.xiFail=(b===undefined&&!p.bld)||(m===undefined&&!p.mv)||(lc===undefined&&!p.lc);
   if(p.bld&&!p.bld.length)p.bld=null;if(p.mv&&!p.mv.length)p.mv=null;
-  // 점검용 : 아파트(집합건물)는 NED 건물 API에 없어서, 브이월드 건물 레이어에서 무엇을 주는지 확인
-  if(log&&window.__vw&&window.__geom){const g=window.__geom,pts=(g.type==='Polygon'?[g.coordinates]:g.coordinates).flat(2);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
-    for(const lay of ['LT_C_SPBD','LT_C_BLDGINFO']){try{const d=await window.__vw('data',{service:'data',version:'2.0',request:'getfeature',data:lay,geomfilter:`BOX(${x0},${y0},${x1},${y1})`,size:'30',geometry:'false',attribute:'true',crs:'EPSG:4326'});
-      const r=d&&d.response,fs=(r&&r.result&&r.result.featureCollection&&r.result.featureCollection.features)||[];log.push(lay+' → '+(fs.length?fs.length+'건\n'+JSON.stringify(fs.slice(0,3).map(f=>f.properties),null,1):JSON.stringify(r||d).slice(0,300)))}catch(e){log.push(lay+' → 오류 '+e.message)}}}
   if(log)p.probe=log.join('\n\n');
   // 하나라도 통신이 실패했으면 '다 받았음(xi)' 표시를 하지 않음 → 다음에 다시 받아 옴 (빈 칸이 7일 동안 굳는 것 방지)
   if(!log&&p.pnu){const v={};if(b!==undefined)v.bld=p.bld||null;if(m!==undefined)v.mv=p.mv||null;if(lc!==undefined)v.lc=p.lc||null;
