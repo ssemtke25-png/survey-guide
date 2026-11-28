@@ -342,7 +342,7 @@ function aptHTML(a){const R=a.rows,grp={};R.forEach(r=>{const k=Math.round(+r.a)
   <div class="hint" style="margin-top:8px">최근 거래</div><table><thead><tr><th>계약일</th><th>전용</th><th>층</th><th style="text-align:right">금액</th></tr></thead><tbody>${rec}</tbody></table>
   <div class="hint" style="margin-top:4px">국토교통부 실거래가 공개 자료 (${esc(a.upd||'')} 기준, 해제된 거래 제외) · 참고용</div></details>`}
 function bldHTML(b){const one=x=>`<div class="bl"><b>${esc(x.name||x.use||'건물')}</b>${x.name&&x.use?` <span>${esc(x.use)}</span>`:''}<div class="hint">${[x.year?'사용승인 '+x.year:'',x.area?'연면적 '+(+x.area).toLocaleString(undefined,{maximumFractionDigits:2})+'㎡ ('+Math.round(x.area*0.3025).toLocaleString()+'평)':'',x.fl?'지상 '+x.fl+'층'+(x.ufl&&+x.ufl?' · 지하 '+x.ufl+'층':''):'',x.str||''].filter(Boolean).join(' · ')}</div></div>`;
-  return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">건축물대장 기준</span></div>`+b.slice(0,5).map(one).join('')+
+  return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">${b[0].g?'건물통합정보 기준':'건축물대장 기준'}</span></div>`+b.slice(0,5).map(one).join('')+
   (b.length>5?`<details class="bmore"><summary class="hint" style="cursor:pointer;color:var(--blue);margin-top:6px">나머지 ${b.length-5}동 더 보기</summary>${b.slice(5,60).map(one).join('')}${b.length>60?`<div class="hint">외 ${b.length-60}동</div>`:''}</details>`:'')+`</div>`}
 function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x.why)}</td><td>${esc(x.jm||'')}</td><td style="text-align:right">${x.ar?(+x.ar).toLocaleString()+'㎡':''}</td></tr>`);
   return `<details class="hist mv"${m.length<=4?' open':''}><summary class="hh2"><b>토지 이동 연혁</b><span class="hint">${m.length}건 · 최근 ${esc(m[0].d?m[0].d+' ':'')}${esc(m[0].why)}</span></summary>
@@ -369,6 +369,13 @@ async function extraInfo(p){const log=PROBE?[]:null;
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
+  // 아파트 등 집합건물은 NED 건물 API에 없음 → 브이월드 GIS건물통합정보(LT_C_BLDGINFO)에서 동별로 받기
+  if(!(p.bld&&p.bld.length)&&window.__vw&&p.pnu){try{const d=await window.__vw('data',{service:'data',version:'2.0',request:'getfeature',data:'LT_C_BLDGINFO',attrfilter:'pnu:=:'+p.pnu,size:'200',geometry:'false',attribute:'true',crs:'EPSG:4326'});
+    const fs=(((d||{}).response||{}).result||{}).featureCollection?d.response.result.featureCollection.features.map(f=>f.properties):[];const fs2=fs.filter(o=>o&&(o.bld_nm||o.dong_nm||+o.totalarea>0||+o.grnd_flr>0));
+    if(log)log.push('LT_C_BLDGINFO(pnu) → '+fs2.length+'/'+fs.length+'건\n'+JSON.stringify((fs2.length?fs2:fs).slice(0,2),null,1)+(fs.length?'':'\n'+JSON.stringify(d&&d.response).slice(0,300)));
+    if(fs2.length){const nat=x=>String(x).replace(/\d+/g,n=>n.padStart(6,'0'));
+      p.bld=fs2.map(o=>({g:1,name:[o.bld_nm,o.dong_nm].filter(Boolean).join(' ').trim(),use:'',year:ymd(String(o.useapr_day||'')),area:+o.totalarea||0,fl:+o.grnd_flr?o.grnd_flr:'',ufl:o.ugrnd_flr,str:''}))
+        .sort((a,b)=>nat(a.name).localeCompare(nat(b.name)));if(b===undefined)b=null}}catch(e){if(log)log.push('LT_C_BLDGINFO(pnu) → 오류 '+e.message)}}
   p.xiFail=(b===undefined&&!p.bld)||(m===undefined&&!p.mv)||(lc===undefined&&!p.lc);
   if(p.bld&&!p.bld.length)p.bld=null;if(p.mv&&!p.mv.length)p.mv=null;
   // 점검용 : 아파트(집합건물)는 NED 건물 API에 없어서, 브이월드 건물 레이어에서 무엇을 주는지 확인
