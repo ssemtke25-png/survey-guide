@@ -40,6 +40,7 @@ h1{font-size:28px;font-weight:900;letter-spacing:-.02em;margin:0}
 .sub{color:var(--mut);font-size:14px;margin:2px 0 14px}
 h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;color:var(--mut);margin-left:4px}.infobox{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}.infobox .addr{font-weight:900;font-size:18px}.infobox .meta{color:var(--mut);font-size:14px}
 .tour .tr{display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line);align-items:flex-start}.tour .tr:first-of-type{border-top:0}.tour .tl{display:flex;gap:12px;margin-top:2px}.tour .tl a{font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none}.tour img,.tour .ni{width:64px;height:48px;object-fit:cover;border-radius:6px;flex:none;background:var(--panel)}.tour .tt{font-size:13.5px;line-height:1.45}.tour .tt small{color:var(--mut);font-size:12px}.tour .to{display:block;color:var(--mut);font-size:12.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tabs{display:flex;margin:10px 0 6px;border-bottom:1px solid var(--line)}.tabs a{flex:1;text-align:center;padding:8px 4px;font-weight:700;font-size:15px;color:var(--mut);text-decoration:none;border-bottom:3px solid transparent;margin-bottom:-1px}.tabs a:hover{color:var(--ink)}.tabs a[aria-current=page]{color:var(--ink);border-bottom-color:var(--red)}
 .kinds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .kinds button{text-align:left;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;min-height:64px}
 .kinds b{display:block;font-size:14.5px;line-height:1.35}
@@ -197,7 +198,8 @@ tr.sum td{font-weight:900}
   </div>
   <div class="side" id="side">
     <div class="sheethd" id="sheetHd"><div class="grab"></div><div class="shrow"><b id="shTitle">지도에서 내 땅을 콕 눌러 보세요</b><span id="shFee"></span></div></div>
-    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button><button type="button" id="bQR" title="휴대폰으로 이어 보기">📱 휴대폰으로</button><a class="tlink" href="apt.html">🏢 아파트 거래</a><a class="tlink" id="tlTour" href="tour.html">🧭 가볼 만한 곳</a></div></div>
+    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button><button type="button" id="bQR" title="휴대폰으로 이어 보기">📱 휴대폰으로</button></div></div>
+    <nav class="tabs" aria-label="화면 고르기"><a href="./" aria-current="page">내 땅</a><a href="apt.html">아파트 거래</a><a id="tlTour" href="tour.html">가볼 만한 곳</a></nav>
     <div class="qrpop" id="qrPop" hidden><div id="qrImg"></div><b id="qrT">휴대폰 카메라로 찍어 보세요</b><span id="qrS"></span><button type="button" id="qrX" aria-label="닫기">✕</button></div>
     <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>

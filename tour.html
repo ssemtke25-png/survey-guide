@@ -46,7 +46,8 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 .pop b{font-size:15px}.pop small{color:var(--mut);display:block}.pop p{margin:6px 0;color:#333}
 .pop a{color:var(--blue);font-weight:700;text-decoration:none}.pop .lk{display:flex;gap:14px;flex-wrap:wrap}
 .foot{color:var(--mut);font-size:12px;margin-top:16px;line-height:1.6}
-.ph img{width:46px;height:46px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);background:#fff;display:block;transition:transform .12s}.ph:hover img{transform:scale(1.5)}.ph.nf img{visibility:hidden}.ph span{position:absolute;left:50%;top:48px;transform:translateX(-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#17203a;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
+.bm{display:flex;box-shadow:0 2px 8px rgba(0,0,0,.2);border-radius:8px;overflow:hidden}.bm button{border:0;background:#fff;padding:7px 14px;font-weight:700;cursor:pointer;color:var(--mut)}.bm button+button{border-left:1px solid var(--line)}.bm button[aria-pressed=true]{background:var(--ink);color:#fff}
+.leaflet-container .leaflet-marker-pane .ph img{width:46px!important;height:46px!important}.ph img{width:46px;height:46px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);background:#fff;display:block;transition:transform .12s}.ph:hover img{transform:scale(1.5)}.ph.nf img{visibility:hidden}.ph span{position:absolute;left:50%;top:48px;transform:translateX(-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#17203a;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
 .leaflet-container{font:inherit}
 @media (max-width:860px){
   body{display:block;height:auto}html{height:auto}main{display:block!important;overflow:visible!important}.mapbox{height:55vh;min-height:0!important}
@@ -60,8 +61,7 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 <body>
 <header>
   <h1><a href="./" title="내땅 보이소 처음 화면으로">내땅 보이소</a></h1>
-  <nav class="tabs" aria-label="화면 고르기"><a href="apt.html">아파트 거래</a><a href="tour.html" aria-current="page">가볼 만한 곳</a></nav>
-  <a class="home" href="./">← 내 땅 찾기로</a>
+  <nav class="tabs" aria-label="화면 고르기"><a href="./">내 땅</a><a href="apt.html">아파트 거래</a><a href="tour.html" aria-current="page">가볼 만한 곳</a></nav>
 </header>
 <div class="filters">
   <span><label for="fSido">지역</label><select id="fSido"></select> <select id="fSgg"><option value="">시군구 고르기</option></select></span>
@@ -83,7 +83,12 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c
 const KEY=(window.VWORLD_KEY||'').trim(),TY={'12':'관광지','14':'문화시설','28':'레포츠','39':'맛집'},COL={'12':'#257de0','14':'#f47230','28':'#00b894','39':'#f2a600'};
 const MINZ=10,on=new Set(['12','14','28','39']);
 const map=L.map('map',{zoomControl:true,attributionControl:true,minZoom:7,maxZoom:18}).setView([36.5759,128.5056],11);
-if(KEY)L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Base/{z}/{y}/{x}.png`,{maxZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer',updateWhenIdle:true,keepBuffer:1}).addTo(map);
+const TO={maxZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer',updateWhenIdle:true,keepBuffer:1};
+const BASE=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Base/{z}/{y}/{x}.png`,TO).addTo(map):null;
+const SAT=KEY?L.layerGroup([L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Satellite/{z}/{y}/{x}.jpeg`,TO),L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,TO)]):null;
+{const c=L.control({position:'topright'});c.onAdd=()=>{const d=L.DomUtil.create('div','bm');d.innerHTML='<button type="button" data-m="b" aria-pressed="true">일반</button><button type="button" data-m="s" aria-pressed="false">위성</button>';
+  L.DomEvent.disableClickPropagation(d);d.onclick=e=>{const b=e.target.closest('button');if(!b||!KEY)return;const sat=b.dataset.m==='s';
+    if(sat){map.removeLayer(BASE);SAT.addTo(map)}else{map.removeLayer(SAT);BASE.addTo(map)}[...d.children].forEach(x=>x.setAttribute('aria-pressed',x===b))};return d};c.addTo(map)}
 map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('관광정보 한국관광공사');
 // 지역 고르기 : 시군구 경계 파일에서 시도·시군구 목록과 범위를 만듦
 const G=await fetch('data/sgg.geojson').then(r=>r.ok?r.json():null).catch(()=>null);const BB={},bySido={};
@@ -100,6 +105,9 @@ $('fSgg').onchange=e=>{const b=BB[e.target.value];if(b)map.fitBounds(b,{maxZoom:
 // 관광지 칸 파일 (0.1도) : 보이는 칸만 받음
 const C={},get=k=>C[k]||(C[k]=fetch(`data/tour/g/${k}.json`).then(r=>r.ok?r.json():[]).catch(()=>[]));
 const layer=L.layerGroup().addTo(map),mk={};let items=[],seq=0,want=null;
+// 설명창은 점·사진과 따로 지도에 띄움 → 지도를 옮기거나 확대해도 그대로 있고, 다른 곳을 누르거나 X를 눌러야 바뀜/닫힘
+const POP=L.popup({maxWidth:260,closeOnClick:false,autoClose:false});
+function openPop(r,photo){if(!r)return;POP.options.offset=photo?[0,-20]:[0,-4];POP.setLatLng([r.y,r.x]).setContent(popHTML(r));if(!map.hasLayer(POP))POP.openOn(map);else POP.update()}
 function popHTML(r){return `<div class="pop">${r.img?`<img src="${esc(r.img)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<p>${esc(r.o)}</p>`:''}<div class="lk">${r.hp?`<a href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}<a href="https://map.kakao.com/link/to/${encodeURIComponent(r.t)},${r.y},${r.x}" target="_blank" rel="noopener">카카오맵 길찾기 →</a></div></div>`}
 async function load(){const z=map.getZoom(),my=++seq;
   if(z<MINZ){layer.clearLayers();items=[];$('note').hidden=false;$('note').textContent='지도를 조금 더 확대하면 관광지가 보여요';$('cnt').textContent='위에서 시군구를 고르거나 지도를 확대해 주세요';$('list').innerHTML='';return}
@@ -117,11 +125,11 @@ async function load(){const z=map.getZoom(),my=++seq;
       if(!taken.has(cell)&&taken.size<120){taken.add(cell);
         m=L.marker([r.y,r.x],{icon:L.divIcon({className:'ph',iconSize:[46,46],iconAnchor:[23,23],html:`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="border-color:${COL[r.ty]}" onerror="this.parentNode.classList.add('nf')">${showName?`<span>${esc(r.t)}</span>`:''}`}),riseOnHover:true,zIndexOffset:1000})}}
     if(!m)m=L.circleMarker([r.y,r.x],{radius:6,weight:2,color:'#fff',fillColor:COL[r.ty],fillOpacity:1});
-    m.bindPopup(()=>popHTML(r),{maxWidth:260,offset:m instanceof L.Marker?[0,-20]:[0,0]});m.addTo(layer);mk[r.id]=m}
-  if(want&&mk[want]){mk[want].openPopup();want=null}
+    m.on('click',()=>openPop(r,m instanceof L.Marker));m.addTo(layer);mk[r.id]=m}
+  if(want){const r=items.find(x=>x.id===want);if(r)openPop(r,!!(mk[want] instanceof L.Marker));want=null}
   $('cnt').textContent=items.length?`이 화면에 ${items.length.toLocaleString()}곳 · 지도 가운데에서 가까운 순`:'이 화면에는 관광지 자료가 없어요';
   $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
-$('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest('.it');if(!it)return;const m=mk[it.dataset.id];if(!m)return;want=it.dataset.id;const z=Math.max(map.getZoom(),14);if(map.getCenter().distanceTo(m.getLatLng())<1&&map.getZoom()===z){m.openPopup();want=null}else map.setView(m.getLatLng(),z)};
+$('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest('.it');if(!it)return;const m=mk[it.dataset.id];if(!m)return;want=it.dataset.id;const z=Math.max(map.getZoom(),14);if(map.getCenter().distanceTo(m.getLatLng())<1&&map.getZoom()===z){openPop(items.find(x=>x.id===it.dataset.id),m instanceof L.Marker);want=null}else map.setView(m.getLatLng(),z)};
 $('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
 let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
 // 처음 화면 : 내 땅 화면에서 넘어오면 그 자리(#lat,lng), 아니면 경북도청 근처
