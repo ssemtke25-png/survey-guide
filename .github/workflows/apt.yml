@@ -1,0 +1,30 @@
+name: 아파트 실거래가 모으기
+on:
+  schedule:
+    - cron: '0 18 4 * *'   # 매달 5일 새벽 3시(한국시간)
+  workflow_dispatch:
+    inputs:
+      months:
+        description: '다시 받을 개월 수 (처음에는 36)'
+        default: '3'
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 실거래가 받기
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python scripts/apt_fetch.py ${{ github.event.inputs.months || '3' }}
+      - name: 저장
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add data/apt
+          git diff --cached --quiet || git commit -m "아파트 실거래가 갱신 $(date +%Y-%m-%d)"
+          git push
