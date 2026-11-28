@@ -45,12 +45,12 @@ def call(op, **params):
     except ValueError:
         if VER == 0 and op == 'areaBasedList':
             print('새 판 응답이 이상해서 예전 판으로 바꿔요:', txt[:200].replace('\n', ' ')); VER = 1; return call(op, **params)
-        if op == 'detailCommon': print('소개글 응답이 이상해서 오늘은 여기까지:', txt[:300]); raise OutOfBudget()
+        if op in ('detailCommon', 'detailIntro'): print('소개글 응답이 이상해서 오늘은 여기까지:', txt[:300]); raise OutOfBudget()
         raise SystemExit(f'{op} 응답이 JSON이 아니에요 (인증키·활용신청 확인): {txt[:400]}')
     h = d.get('response', {}).get('header', {})
     if h.get('resultCode') not in ('0000', '00'):
         if h.get('resultCode') == '22': raise OutOfBudget()
-        if op == 'detailCommon': print('소개글 오류로 오늘은 여기까지:', h); raise OutOfBudget()
+        if op in ('detailCommon', 'detailIntro'): print('소개글 오류로 오늘은 여기까지:', h); raise OutOfBudget()
         raise SystemExit(f'{op} 오류 {h.get("resultCode")} {h.get("resultMsg")}')
     b = d['response'].get('body', {}); it = (b.get('items') or {})
     it = it.get('item', []) if isinstance(it, dict) else []
@@ -79,6 +79,8 @@ def fetch_list(db):
                            'c0': '/'.join(filter(None, [x.get('cat1'), x.get('cat2'), x.get('cat3')])),
                            'o': old.get('o', '') if old.get('m') == x.get('modifiedtime', '') else '',
                            'hp': old.get('hp', '') if old.get('m') == x.get('modifiedtime', '') else '',
+                           'u': old.get('u', {}) if old.get('m') == x.get('modifiedtime', '') else {},
+                           'ud': old.get('ud', 0) if old.get('m') == x.get('modifiedtime', '') else 0,
                            'od': old.get('od', 0) if old.get('m') == x.get('modifiedtime', '') else 0}
                 seen.add(cid)
             got += len(items); print(TYPES[ty], page, '쪽', len(items), '건 · 누적', got, '/ 전체', total)
@@ -98,18 +100,46 @@ def clean(s):
     s = re.sub(r'<br\s*/?>', ' ', s or '', flags=re.I); s = re.sub(r'<[^>]+>', '', s)
     return re.sub(r'\s+', ' ', s).strip()
 
+# 이용 안내(detailIntro) : 종류마다 칸 이름이 달라서 이 표로 꺼냄 → 시간 t, 쉬는 날 r, 요금 f, 주차 p, 문의 i, 대표 메뉴 m
+INTRO = {
+    '12': {'t': ['usetime'], 'r': ['restdate'], 'f': ['usefee', 'expguide'], 'p': ['parking'], 'i': ['infocenter']},
+    '14': {'t': ['usetimeculture'], 'r': ['restdateculture'], 'f': ['usefee'], 'p': ['parkingculture'], 'i': ['infocenterculture']},
+    '28': {'t': ['usetimeleports'], 'r': ['restdateleports'], 'f': ['usefeeleports'], 'p': ['parkingleports'], 'i': ['infocenterleports']},
+    '39': {'t': ['opentimefood'], 'r': ['restdatefood'], 'm': ['firstmenu', 'treatmenu'], 'p': ['parkingfood'], 'i': ['infocenterfood']},
+}
+
+def intro(it, ty):
+    out = {}
+    for k, names in INTRO.get(ty, {}).items():
+        for n in names:
+            v = clean(str(it.get(n) or ''))
+            if v: out[k] = v[:140] + ('…' if len(v) > 140 else ''); break
+    return out
+
 def fill_overview(db):
-    # 소개글은 한 곳에 한 번씩 불러야 해서, 경북·사진 있는 곳부터 조금씩 채움
-    todo = [c for c, v in db.items() if not v.get('od')]
-    # 경북 → 사진 있는 곳 → 관광지 → 문화시설·레포츠 → 음식점 순
+    # 한 곳마다 따로 불러야 하는 것 두 가지 : 소개글(detailCommon)·이용 안내(detailIntro)
+    # 순서 : 경북 소개글 → 경북 이용 안내 → 경북 짧은 소개글 다시 → 다른 지역 소개글 → 다른 지역 이용 안내 → 나머지
+    short = lambda v: v.get('od') and v.get('o', '').endswith('…') and len(v.get('o', '')) <= 161
     rank = {'12': 0, '14': 1, '28': 1, '39': 2}
-    todo.sort(key=lambda c: (not db[c]['a'].startswith('경상북도'), not db[c]['img'], rank.get(db[c]['ty'], 3)))
+    jobs = []
+    for c, v in db.items():
+        gb = not v['a'].startswith('경상북도'); base = (gb, not v['img'], rank.get(v['ty'], 3))
+        if not v.get('od'): jobs.append(((gb, 0) + base[1:], c, 'o'))
+        elif short(v): jobs.append(((gb, 2) + base[1:], c, 'o'))
+        if not v.get('ud'): jobs.append(((gb, 1) + base[1:], c, 'u'))
+    jobs.sort(key=lambda j: j[0])
     n = 0
-    for cid in todo:
-        items, _ = call('detailCommon', contentId=cid)
-        o = clean(items[0].get('overview', '')) if items else ''
-        db[cid]['hp'] = homepage(items[0].get('homepage', '')) if items else ''
-        db[cid]['o'] = o[:160] + ('…' if len(o) > 160 else ''); db[cid]['od'] = 1; n += 1; fill_overview.n = n
+    for _, cid, kind in jobs:
+        v = db[cid]
+        if kind == 'o':
+            items, _ = call('detailCommon', contentId=cid)
+            o = clean(items[0].get('overview', '')) if items else ''
+            v['hp'] = homepage(items[0].get('homepage', '')) if items else ''
+            v['o'] = o[:600] + ('…' if len(o) > 600 else ''); v['od'] = 1
+        else:
+            items, _ = call('detailIntro', contentId=cid, contentTypeId=v['ty'])
+            v['u'] = intro(items[0], v['ty']) if items else {}; v['ud'] = 1
+        n += 1; fill_overview.n = n
         time.sleep(0.1)
     return n
 
@@ -119,7 +149,7 @@ def write_grid(db):
     cells = {}
     for cid, v in db.items():
         k = f'{int(v["y"] * 10)}_{int(v["x"] * 10)}'
-        cells.setdefault(k, []).append([cid, v['t'], v['ty'], v['x'], v['y'], v['img'], v['a'], v.get('o', ''), v.get('hp', ''), v.get('c') or v.get('c0', '')])
+        cells.setdefault(k, []).append([cid, v['t'], v['ty'], v['x'], v['y'], v['img'], v['a'], v.get('o', ''), v.get('hp', ''), v.get('c') or v.get('c0', ''), v.get('u') or {}, v.get('tel', '')])
     for k, rows in cells.items():
         json.dump(rows, open(os.path.join(gdir, f'{k}.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     return len(cells)
@@ -141,8 +171,9 @@ def main():
     st['updated'] = datetime.date.today().isoformat()
     json.dump(st, open(ALL, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     cells = write_grid(db)
-    left = sum(1 for v in db.values() if not v.get('od'))
-    print(f'관광지 {len(db)}곳 · 이번에 소개글 {filled}곳 채움 · 남은 소개글 {left}곳 · 칸 파일 {cells}개 · 호출 {calls}번')
+    left = sum(1 for v in db.values() if not v.get('od') or (v.get('o', '').endswith('…') and len(v.get('o', '')) <= 161))
+    uleft = sum(1 for v in db.values() if not v.get('ud'))
+    print(f'관광지 {len(db)}곳 · 이번에 {filled}건 채움 · 남은 소개글 {left}곳 · 남은 이용 안내 {uleft}곳 · 칸 파일 {cells}개 · 호출 {calls}번')
     if not db: raise SystemExit('받은 관광지가 0곳이에요. 위의 첫 응답 예시를 확인해 주세요.')
 
 main()

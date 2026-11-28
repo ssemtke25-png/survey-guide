@@ -41,9 +41,9 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 .it small{color:var(--mut);font-size:12px;display:block}
 .it .o{color:var(--mut);font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .it .hp{font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px}
-.pop{width:240px;font:13.5px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;color:var(--ink)}
+.pop{width:280px;font:13.5px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;color:var(--ink)}
 .pop img{width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:6px;display:block}
-.pop b{font-size:15px}.pop small{color:var(--mut);display:block}.pop p{margin:6px 0;color:#333}
+.pop b{font-size:15px}.pop small{color:var(--mut);display:block}.pop p{margin:6px 0;color:#333;max-height:190px;overflow:auto;white-space:pre-line}.pop .use{width:100%;border-collapse:collapse;margin:6px 0 2px;font-size:12.5px}.pop .use th{white-space:nowrap;text-align:left;color:var(--mut);font-weight:700;padding:3px 8px 3px 0;vertical-align:top;width:58px}.pop .use td{padding:3px 0;border-bottom:1px dashed var(--line)}.pop .use a{font-weight:700}.it .uline{display:block;font-size:12px;color:#0e7a4a}.pop .nop{color:var(--mut);font-size:12.5px}
 .pop a{color:var(--blue);font-weight:700;text-decoration:none}.pop .lk{display:flex;gap:14px;flex-wrap:wrap}
 .foot{color:var(--mut);font-size:12px;margin-top:16px;line-height:1.6}
 .bm{display:flex;box-shadow:0 2px 8px rgba(0,0,0,.2);border-radius:8px;overflow:hidden}.bm button{border:0;background:#fff;padding:7px 14px;font-weight:700;cursor:pointer;color:var(--mut)}.bm button+button{border-left:1px solid var(--line)}.bm button[aria-pressed=true]{background:var(--ink);color:#fff}
@@ -108,16 +108,21 @@ $('fSgg').onchange=e=>{const b=BB[e.target.value];if(b)map.fitBounds(b,{maxZoom:
 const C={},get=k=>C[k]||(C[k]=fetch(`data/tour/g/${k}.json`).then(r=>r.ok?r.json():[]).catch(()=>[]));
 const layer=L.layerGroup().addTo(map),mk={};let items=[],seq=0,want=null;
 // 설명창은 점·사진과 따로 지도에 띄움 → 지도를 옮기거나 확대해도 그대로 있고, 다른 곳을 누르거나 X를 눌러야 바뀜/닫힘
-const POP=L.popup({maxWidth:260,closeOnClick:false,autoClose:false});
+const POP=L.popup({maxWidth:300,minWidth:280,closeOnClick:false,autoClose:false});
 function openPop(r,photo){if(!r)return;POP.options.offset=photo?[0,-20]:[0,-4];POP.setLatLng([r.y,r.x]).setContent(popHTML(r));if(!map.hasLayer(POP))POP.openOn(map);else POP.update()}
-function popHTML(r){return `<div class="pop">${r.img?`<img src="${esc(r.img)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<p>${esc(r.o)}</p>`:''}<div class="lk">${r.hp?`<a href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}<a href="https://map.kakao.com/link/to/${encodeURIComponent(r.t)},${r.y},${r.x}" target="_blank" rel="noopener">카카오맵 길찾기 →</a></div></div>`}
+// 이용 안내 : 시간·쉬는 날·요금·대표 메뉴·주차·문의 (관광공사 자료에 있는 것만)
+function useHTML(r){const u=r.u||{},tel=(u.i||r.tel||'').trim(),num=(tel.match(/0\d{1,2}[-\s)]?\d{3,4}[-\s]?\d{4}/)||[''])[0].replace(/[^\d]/g,'');
+  const rows=[['이용시간',u.t],['쉬는 날',u.r],[r.ty==='39'?'대표 메뉴':'요금',r.ty==='39'?u.m:u.f],['주차',u.p]].filter(x=>x[1]);
+  if(!rows.length&&!tel)return '';
+  return `<table class="use">${rows.map(([k,v])=>`<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('')}${tel?`<tr><th>문의</th><td>${num?`<a href="tel:${num}">${esc(tel)}</a>`:esc(tel)}</td></tr>`:''}</table>`}
+function popHTML(r){return `<div class="pop">${r.img?`<img src="${esc(r.img)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${useHTML(r)}${r.o?`<p>${esc(r.o)}</p>`:`<p class="nop">소개글은 관광공사 자료에서 차례로 채우는 중이에요. (경북부터)</p>`}<div class="lk">${r.hp?`<a href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}<a href="https://map.kakao.com/link/to/${encodeURIComponent(r.t)},${r.y},${r.x}" target="_blank" rel="noopener">카카오맵 길찾기 →</a></div></div>`}
 async function load(){const z=map.getZoom(),my=++seq;
   if(z<MINZ){layer.clearLayers();items=[];$('note').hidden=false;$('note').textContent='지도를 조금 더 확대하면 관광지가 보여요';$('cnt').textContent='위에서 시군구를 고르거나 지도를 확대해 주세요';$('list').innerHTML='';return}
   $('note').hidden=true;const b=map.getBounds(),ks=[];
   for(let i=Math.floor(b.getSouth()*10);i<=Math.floor(b.getNorth()*10);i++)for(let j=Math.floor(b.getWest()*10);j<=Math.floor(b.getEast()*10);j++)ks.push(`${i}_${j}`);
   const rows=(await Promise.all(ks.slice(0,160).map(get))).flat();if(my!==seq)return;
   const c=map.getCenter(),d2=r=>{const dy=r.y-c.lat,dx=(r.x-c.lng)*Math.cos(c.lat*Math.PI/180);return dy*dy+dx*dx};
-  items=rows.map(r=>({id:r[0],t:r[1],ty:r[2],x:r[3],y:r[4],img:r[5],a:r[6],o:r[7],hp:/^https?:\/\//.test(r[8]||'')?r[8]:''})).filter(r=>on.has(r.ty)&&b.contains([r.y,r.x])).sort((a,b)=>d2(a)-d2(b));
+  items=rows.map(r=>({id:r[0],t:r[1],ty:r[2],x:r[3],y:r[4],img:r[5],a:r[6],o:r[7],hp:/^https?:\/\//.test(r[8]||'')?r[8]:'',u:r[10]||{},tel:r[11]||''})).filter(r=>on.has(r.ty)&&b.contains([r.y,r.x])).sort((a,b)=>d2(a)-d2(b));
   layer.clearLayers();
   for(const k in mk)delete mk[k];
   // 사진 있는 곳은 사진으로 : 화면을 52px 칸으로 나눠 칸마다 한 장만(가운데에서 가까운 곳), 나머지는 점
@@ -130,7 +135,7 @@ async function load(){const z=map.getZoom(),my=++seq;
     m.on('click',()=>openPop(r,m instanceof L.Marker));m.addTo(layer);mk[r.id]=m}
   if(want){const r=items.find(x=>x.id===want);if(r)openPop(r,!!(mk[want] instanceof L.Marker));want=null}
   $('cnt').textContent=items.length?`이 화면에 ${items.length.toLocaleString()}곳 · 지도 가운데에서 가까운 순`:'이 화면에는 관광지 자료가 없어요';
-  $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
+  $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.u&&(r.u.t||r.u.r)?`<span class="uline">${r.u.t?'⏰ '+esc(r.u.t.slice(0,40)):''}${r.u.t&&r.u.r?' · ':''}${r.u.r?'쉬는 날 '+esc(r.u.r.slice(0,24)):''}</span>`:''}${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
 $('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest('.it');if(!it)return;const m=mk[it.dataset.id];if(!m)return;want=it.dataset.id;const z=Math.max(map.getZoom(),14);if(map.getCenter().distanceTo(m.getLatLng())<1&&map.getZoom()===z){openPop(items.find(x=>x.id===it.dataset.id),m instanceof L.Marker);want=null}else map.setView(m.getLatLng(),z)};
 $('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
 let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
