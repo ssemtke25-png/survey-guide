@@ -371,6 +371,10 @@ async function extraInfo(p){const log=PROBE?[]:null;
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
   p.xiFail=(b===undefined&&!p.bld)||(m===undefined&&!p.mv)||(lc===undefined&&!p.lc);
   if(p.bld&&!p.bld.length)p.bld=null;if(p.mv&&!p.mv.length)p.mv=null;
+  // 점검용 : 아파트(집합건물)는 NED 건물 API에 없어서, 브이월드 건물 레이어에서 무엇을 주는지 확인
+  if(log&&window.__vw&&window.__geom){const g=window.__geom,pts=(g.type==='Polygon'?[g.coordinates]:g.coordinates).flat(2);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
+    for(const lay of ['LT_C_SPBD','LT_C_BLDGINFO']){try{const d=await window.__vw('data',{service:'data',version:'2.0',request:'getfeature',data:lay,geomfilter:`BOX(${x0},${y0},${x1},${y1})`,size:'30',geometry:'false',attribute:'true',crs:'EPSG:4326'});
+      const r=d&&d.response,fs=(r&&r.result&&r.result.featureCollection&&r.result.featureCollection.features)||[];log.push(lay+' → '+(fs.length?fs.length+'건\n'+JSON.stringify(fs.slice(0,3).map(f=>f.properties),null,1):JSON.stringify(r||d).slice(0,300)))}catch(e){log.push(lay+' → 오류 '+e.message)}}}
   if(log)p.probe=log.join('\n\n');
   // 하나라도 통신이 실패했으면 '다 받았음(xi)' 표시를 하지 않음 → 다음에 다시 받아 옴 (빈 칸이 7일 동안 굳는 것 방지)
   if(!log&&p.pnu){const v={};if(b!==undefined)v.bld=p.bld||null;if(m!==undefined)v.mv=p.mv||null;if(lc!==undefined)v.lc=p.lc||null;
@@ -798,7 +802,7 @@ async function geocode(road){if(road in GEO)return GEO[road];GEO[road]=null;
   return GEO[road]}
 if(KEY)window.__geocode=geocode;
 let seq=0;
-function vw(path,params,ms=9000){return new Promise((res,rej)=>{
+window.__vw=(...a)=>vw(...a);function vw(path,params,ms=9000){return new Promise((res,rej)=>{
   const cb='__vw'+(++seq),s=document.createElement('script');
   const t=setTimeout(()=>{window[cb]=()=>delete window[cb];s.remove();rej(new Error('브이월드 응답이 없어요'))},ms);
   window[cb]=d=>{clearTimeout(t);delete window[cb];s.remove();res(d)};
