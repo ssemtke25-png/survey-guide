@@ -320,8 +320,8 @@ const ymd=v=>{v=String(v||'').replace(/[^0-9]/g,'');return v.length>=8?`${v.slic
 function lcHTML(c){const it=(k,v,warn)=>v?`<div><span>${k}</span><b${warn?' style="color:var(--red)"':''}>${esc(v)}</b></div>`:'';
   return `<div class="hist lc"><div class="hh2"><b>토지 특성</b><span class="hint">${c.year?esc(c.year)+'년 ':''}토지특성조사 기준 ${qm('lc')}</span></div><div class="lcg">
   ${it('이용 상황',c.use)}${it('도로 접면',c.road,/맹지/.test(c.road))}${it('지형 높이',c.hg)}${it('지형 모양',c.frm)}</div>${/맹지/.test(c.road)?'<div class="hint" style="color:var(--red)">맹지 : 도로에 붙어 있지 않은 땅이에요. 건축 허가가 어려울 수 있어요.</div>':''}</div>`}
-// ---------- 아파트 실거래가 (GitHub Actions가 매달 모아 둔 data/apt/시군구.json) — 담당자 확인 전까지 ?apt=1 일 때만
-const APT_ON=window.APT_ON||/[?&]apt=1/.test(location.search),APT_CACHE={};
+// ---------- 아파트 실거래가 (GitHub Actions가 매달 모아 둔 data/apt/시군구.json) — 공개 (끄려면 ?apt=0)
+const APT_ON=!/[?&]apt=0/.test(location.search),APT_CACHE={};
 const eok=m=>{m=+m;const e=Math.floor(m/10000),r=m%10000;return (e?e+'억':'')+(r?(e?' ':'')+r.toLocaleString()+'만':'')+'원'};
 async function aptInfo(p){if(!APT_ON||!p.pnu||!/^47/.test(p.pnu))return;const sgg=p.pnu.slice(0,5),umd=p.pnu.slice(5,10);
   if(!(sgg in APT_CACHE))APT_CACHE[sgg]=fetch(`data/apt/${sgg}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
