@@ -699,8 +699,9 @@ if(typeof L==='undefined'){tip('지도를 불러오지 못했어요. 아래 칸�
 const KEY=(window.VWORLD_KEY||'').trim(),DOMAIN=(window.VWORLD_DOMAIN||'').trim()||(location.protocol==='file:'?'http://localhost':location.origin);
 window.__map=null;const map=window.__map=L.map('map',{zoomControl:false,maxZoom:21}).setView([36.4,128.3],8);
 L.control.zoom({position:'topright'}).addTo(map);
-const FAST={updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1};
-const VW=Object.assign({maxZoom:21,maxNativeZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer'},FAST);
+const FAST={updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1};   // 무거운 그림(WMS: 지적선·용도지역·도시계획) : 손 뗀 뒤 한 번
+const SMOOTH={updateWhenIdle:false,updateWhenZooming:false,keepBuffer:3}; // 바탕 지도 : 끄는 동안에도 계속, 여분 넉넉히
+const VW=Object.assign({maxZoom:21,maxNativeZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer'},SMOOTH);
 // 키가 없으면(내려받은 파일을 직접 연 경우 등) 막힌 지도 대신 안내를 띄움
 const SITE='https://ssemtke25-png.github.io/survey-guide/';
 if(!KEY){const m=document.createElement('div');m.className='nokey';
@@ -749,7 +750,7 @@ async function loadJibun(){if(!jbOn||!JIBUN)return;const z=map.getZoom();
   if(!feats.length)tip('이 화면에서는 지번을 못 가져왔어요')}
 map.on('moveend',()=>{if(!jbOn)return;clearTimeout(jbT);jbT=setTimeout(loadJibun,250)});
 // 건물·장소 이름 : 브이월드 하이브리드(위성용 이름 지도)
-const NAMES=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,{maxZoom:21,maxNativeZoom:19,referrerPolicy:'no-referrer',attribution:'브이월드',...FAST}):null;
+const NAMES=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,{maxZoom:21,maxNativeZoom:19,referrerPolicy:'no-referrer',attribution:'브이월드',...SMOOTH}):null;
 // 겹쳐 보기 : 용도지역(lt_c_uq111~114), 도시계획시설(lt_c_upisuq151~159) — 지적선 아래에 깔림
 const OVL={};
 // 브이월드 WMS는 한 번에 레이어 4개까지라 4개씩 나눠 받음
