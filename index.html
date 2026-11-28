@@ -71,6 +71,7 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .note2{border-left:4px solid var(--blue);background:#eef3ff;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5}.note2 b{display:block;color:var(--blue);font-size:14.5px}.note2 button{margin-top:6px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:6px 12px;cursor:pointer}
 .lcg{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:4px;font-size:13.5px}.lcg span{color:var(--mut);margin-right:6px;font-size:12.5px}
+.rvb{display:inline-block;vertical-align:middle;font-size:12.5px;font-weight:700;color:var(--blue);border:1.5px solid var(--line);border-radius:999px;padding:2px 9px;margin-left:4px;text-decoration:none;white-space:nowrap}.rvb:hover{border-color:var(--blue)}
 .bl{padding:4px 0;border-top:1px dashed var(--line)}.bl:first-of-type{border-top:0}.bl span{color:var(--mut);font-size:13px}
 .mv summary{cursor:pointer;list-style:none}.mv summary::-webkit-details-marker{display:none}.mv table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}.mv th{color:var(--mut);font-weight:400;text-align:left;border-bottom:1px solid var(--line);padding:3px 2px}.mv td{padding:3px 2px;border-bottom:1px dashed var(--line);vertical-align:top}.mv td:not(:nth-child(2)),.mv th{white-space:nowrap}.mv td:nth-child(2){padding:3px 6px}
 .hist{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.hh2{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:13px}.hh2>b{font-size:14px}
@@ -378,7 +379,7 @@ function histHTML(h){const max=Math.max(...h.map(x=>x[1])),last=h[h.length-1],pr
   <div class="hint" id="hv">막대를 누르면 그해 금액이 보여요 · 최근 ${last[0]}년 ${last[1].toLocaleString()}원/㎡</div></div>`}
 function infoHTML(){
   const p=S.parcel;
-  return p?`<div><div class="addr">${esc(p.addr)}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:p.roadNone?`<div class="road" style="color:var(--mut)">도로명주소 없음 <span style="font-size:12px">(건물이 없는 땅은 도로명주소가 없어요)</span></div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
+  return p?`<div><div class="addr">${esc(p.addr)}${p.rv?` <a class="rvb" href="https://map.kakao.com/link/roadview/${p.rv[0]},${p.rv[1]}" target="_blank" rel="noopener" title="카카오맵 로드뷰로 이 땅 주변 보기">📷 로드뷰</a>`:''}</div>${p.road?`<div class="road">도로명 ${esc(p.road)}</div>`:p.roadNone?`<div class="road" style="color:var(--mut)">도로명주소 없음 <span style="font-size:12px">(건물이 없는 땅은 도로명주소가 없어요)</span></div>`:''}<div class="meta">${p.jimok?'지목 '+esc(p.jimok)+qm('jimok')+' · ':''}${p.own?'소유 '+esc(p.own)+qm('own')+' · ':''}${p.scale?'축척 '+esc(/^\d+$/.test(p.scale)&&+p.scale>0?'1/'+p.scale:p.scale)+' · ':''}공시지가 ${p.price?p.price.toLocaleString()+'원/㎡'+(p.year?' ('+esc(p.year)+'년'+(p.month?' '+esc(p.month)+'월':'')+')':''):'자료 없음'}</div></div>`
     +(p&&p.apt?aptHTML(p.apt):'')
     +(p&&p.uses&&p.uses.length?useHTML(p.uses):'')
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
@@ -870,7 +871,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     S.area=Math.round(polyArea(polys));S.partsEdited=false;S.parcel.areaSrc='대기';if(S.parcel.price)S.price=S.parcel.price;
     if(pnu[10]==='2')S.land='임야';else if(S.land==='임야')S.land='토지';
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
-    hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
+    hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);{const cc=(lat&&lon)?L.latLng(lat,lon):gj.getBounds().getCenter();S.parcel.rv=[+cc.lat.toFixed(6),+cc.lng.toFixed(6)]}if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
     ledger(S.parcel);
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
