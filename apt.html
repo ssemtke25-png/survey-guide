@@ -215,7 +215,7 @@ const _draw=draw;draw=function(){_draw();names()};
 // 다른 탭에서 넘어올 때 : 주소 뒤 #위도,경도 → 그 자리 시군구를 골라 보여 줌
 function goHash(){const p=decodeURIComponent(location.hash.slice(1)).split(',').map(Number);if(p.length<2||!p.every(isFinite))return false;const ll=L.latLng(p[0],p[1]);let hit=null;
   layer.eachLayer(l=>{if(!hit&&l.getBounds().contains(ll)&&inPoly(ll,l.feature.geometry))hit=l});if(!hit)return false;
-  const f=hit.feature.properties;S.sido=f.s;$('fSido').value=f.s;S.sel=f.c;draw();map.fitBounds(hit.getBounds().pad(.6),{maxZoom:10});return true}
+  const f=hit.feature.properties;S.sido='';$('fSido').value='';S.sel=f.c;draw();map.fitBounds(hit.getBounds().pad(.6),{maxZoom:10});return true}
 addEventListener('hashchange',goHash);
 if(!goHash()){draw();fit()}
 })();
