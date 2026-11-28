@@ -24,7 +24,8 @@ jobs:
       - name: 관광지 받기
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-          TOUR_BUDGET: '900'
+          TOUR_BUDGET: '800'
+          PYTHONUNBUFFERED: '1'
         run: python scripts/tour_fetch.py ${{ github.event.inputs.mode || 'auto' }}
       - name: 저장
         if: always()
