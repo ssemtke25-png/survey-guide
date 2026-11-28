@@ -74,9 +74,11 @@ td .s{display:block;color:var(--mut);font-size:12px}
   header{padding:8px 12px}.filters{padding:8px 12px;gap:10px}
   .legend{font-size:11px;padding:5px 7px;left:8px;bottom:8px}.legend b{font-size:11px}.legend .row{line-height:1.45}.legend i{width:12px;height:9px}
 }
+html.embed header{display:none}html.embed .filters{padding-right:450px}
 </style>
 </head>
 <body>
+<script>if(window.self!==window.top)document.documentElement.classList.add('embed')</script>
 <header>
   <h1><a href="./" title="내땅 보이소 처음 화면으로">내땅 보이소</a></h1>
   <nav class="tabs" aria-label="화면 고르기"><a href="./">내 땅</a><a href="apt.html" aria-current="page">아파트 거래</a><a href="tour.html">가볼 만한 곳</a></nav>

@@ -169,9 +169,24 @@ tr.sum td{font-weight:900}
  .legend{left:12px;right:auto;top:calc(104px + env(safe-area-inset-top));max-width:60%}
  .search{right:12px}
 }
+
+/* 창 탭 (PC) : 오른쪽 정보칸 위에 브라우저 탭처럼 붙음. 화면을 새로 불러오지 않고 바꿔 보여 줘서 각 화면 상태가 그대로 남음 */
+.wtabs{display:none}
+@media(min-width:861px){
+  .wtabs{display:flex;gap:2px;align-items:flex-end;position:fixed;z-index:1200;top:0;right:0;width:440px;height:42px;padding:0 8px;background:#dfe5f1;border-bottom:1px solid #c9d1e3;border-left:1px solid #c9d1e3}
+  .wtabs button{position:relative;flex:1;border:0;background:transparent;color:#47506b;font-weight:700;font-size:13.5px;padding:0 6px;height:34px;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap}
+  .wtabs button:hover{background:#ecf0f8}
+  .wtabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 -1px 0 #c9d1e3,1px 0 0 #c9d1e3,-1px 0 0 #c9d1e3;height:35px;margin-bottom:-1px}
+  .wtabs button[aria-selected=false]+button[aria-selected=false]::before{content:"";position:absolute;left:-2px;top:9px;bottom:9px;width:1px;background:#aeb7cc}
+  .side{padding-top:58px!important}
+  .wview{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff;z-index:1100}
+  .side>.tabs{display:none}
+}
 </style>
 </head>
 <body>
+<div class="wtabs" role="tablist" aria-label="화면 고르기"><button type="button" role="tab" data-v="land" aria-selected="true">🗺️ 내 땅</button><button type="button" role="tab" data-v="apt" aria-selected="false">🏢 아파트 거래</button><button type="button" role="tab" data-v="tour" aria-selected="false">🧭 가볼 만한 곳</button></div>
+<iframe class="wview" id="vApt" title="아파트 거래" hidden></iframe><iframe class="wview" id="vTour" title="가볼 만한 곳" hidden></iframe>
 <div class="sticky" id="stk"><span id="stkK">경계복원측량</span><b id="stkV">-</b></div>
 <div class="app">
   <div class="mapwrap">
@@ -940,7 +955,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);{const cc=(lat&&lon)?L.latLng(lat,lon):gj.getBounds().getCenter();S.parcel.rv=[+cc.lat.toFixed(6),+cc.lng.toFixed(6)]}if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
-    ledger(S.parcel);{const t=$('tlTour');if(t&&S.parcel.center)t.href=`tour.html#${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
+    ledger(S.parcel);{const t=$('tlTour');if(S.parcel.center){window.__tourAt=`${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`;if(t)t.href=`tour.html#${window.__tourAt}`}}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }
@@ -1112,6 +1127,15 @@ if(!KEY)tip('지도 인증키가 없어 지도를 쓸 수 없어요. 수수료�
 if(PENDING&&KEY)pick(0,0,PENDING.get('p'));
 }
 }
+</script>
+<script>
+// 창 탭 : 아파트 거래·가볼 만한 곳은 처음 누를 때 한 번만 불러오고, 그 뒤로는 숨겼다 보였다만 함
+(()=>{const bar=document.querySelector('.wtabs');if(!bar)return;const F={apt:document.getElementById('vApt'),tour:document.getElementById('vTour')};
+  const show=v=>{[...bar.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+    for(const k in F){const f=F[k];if(k===v){if(!f.src){f.src=k==='tour'&&window.__tourAt?`tour.html#${window.__tourAt}`:`${k}.html`;f.dataset.at=window.__tourAt||''}
+      else if(k==='tour'&&window.__tourAt&&f.dataset.at!==window.__tourAt){try{f.contentWindow.location.hash=window.__tourAt}catch(e){}f.dataset.at=window.__tourAt}f.hidden=false}else f.hidden=true}
+    if(v==='land'&&window.__map)setTimeout(()=>window.__map.invalidateSize(),0)};
+  bar.onclick=e=>{const b=e.target.closest('button[data-v]');if(b)show(b.dataset.v)}})();
 </script>
 </body>
 </html>

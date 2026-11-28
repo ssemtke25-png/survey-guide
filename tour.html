@@ -56,9 +56,11 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
   .mapbox{min-height:55vh}
   header{padding:8px 12px}.filters{padding:8px 12px;gap:8px}
 }
+html.embed header{display:none}html.embed .filters{padding-right:450px}
 </style>
 </head>
 <body>
+<script>if(window.self!==window.top)document.documentElement.classList.add('embed')</script>
 <header>
   <h1><a href="./" title="내땅 보이소 처음 화면으로">내땅 보이소</a></h1>
   <nav class="tabs" aria-label="화면 고르기"><a href="./">내 땅</a><a href="apt.html">아파트 거래</a><a href="tour.html" aria-current="page">가볼 만한 곳</a></nav>
@@ -133,7 +135,7 @@ $('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest(
 $('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
 let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
 // 처음 화면 : 내 땅 화면에서 넘어오면 그 자리(#lat,lng), 아니면 경북도청 근처
-{const h=location.hash.slice(1).split(',').map(Number);if(h.length===2&&h.every(isFinite))map.setView(h,13)}
+const goHash=()=>{const h=location.hash.slice(1).split(',').map(Number);if(h.length===2&&h.every(isFinite))map.setView(h,13)};goHash();addEventListener('hashchange',goHash);
 load();
 })();
 </script>
