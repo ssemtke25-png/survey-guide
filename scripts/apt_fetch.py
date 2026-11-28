@@ -5,7 +5,9 @@ import os, sys, json, time, datetime, urllib.request, urllib.parse, xml.etree.El
 KEY = os.environ.get('DATA_GO_KR_KEY', '').strip()
 MONTHS = int(sys.argv[1]) if len(sys.argv) > 1 else 3
 KEEP = 36  # 파일에 남겨 둘 개월 수
-URL = 'https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev'
+URLS = ['https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev',  # 상세판
+        'https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade']        # 일반판 (상세판이 안 될 때)
+URL = URLS[0]
 OUT = os.path.join(os.path.dirname(__file__), '..', 'data', 'apt')
 # 경북 시군구 (직제순)
 SGG = ['47111','47113','47130','47150','47170','47190','47210','47230','47250','47280','47290',
@@ -23,7 +25,12 @@ def g(it, *names):
         if e is not None and e.text and e.text.strip(): return e.text.strip()
     return ''
 
+def switch():
+    global URL
+    URL = URLS[URLS.index(URL) + 1]
+
 def fetch(sgg, ym):
+    global URL
     rows, page = [], 1
     while True:
         q = urllib.parse.urlencode({'serviceKey': KEY, 'LAWD_CD': sgg, 'DEAL_YMD': ym, 'numOfRows': 1000, 'pageNo': page})
@@ -37,6 +44,9 @@ def fetch(sgg, ym):
         try: root = ET.fromstring(x)
         except ET.ParseError: raise SystemExit(f'{sgg} {ym} 응답이 XML이 아니에요: {txt[:300]}')
         code = g(root, './/resultCode')
+        if not code and fetch.first and URL != URLS[-1] and '<returnReasonCode>' in txt:
+            print('상세판 응답 이상 → 일반판으로 바꿔서 다시 받아요:', txt[:200].replace('\n', ' '))
+            switch(); continue
         if not code:  # 인증키 오류 등은 resultCode 없이 다른 모양으로 옴
             raise SystemExit(f'{sgg} {ym} 응답 이상 (인증키·활용신청 확인): {txt[:400]}')
         if fetch.first:
