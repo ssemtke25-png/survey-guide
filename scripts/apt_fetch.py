@@ -33,9 +33,15 @@ def fetch(sgg, ym):
             except Exception as e:
                 print('  재시도', sgg, ym, e); time.sleep(3)
         else: raise SystemExit(f'{sgg} {ym} 받기 실패')
-        root = ET.fromstring(x)
+        txt = x.decode('utf-8', 'replace')
+        try: root = ET.fromstring(x)
+        except ET.ParseError: raise SystemExit(f'{sgg} {ym} 응답이 XML이 아니에요: {txt[:300]}')
         code = g(root, './/resultCode')
-        if code not in ('', '00', '000'):
+        if not code:  # 인증키 오류 등은 resultCode 없이 다른 모양으로 옴
+            raise SystemExit(f'{sgg} {ym} 응답 이상 (인증키·활용신청 확인): {txt[:400]}')
+        if fetch.first:
+            print('첫 응답 예시:', txt[:600]); fetch.first = False
+        if code not in ('00', '000'):
             raise SystemExit(f'{sgg} {ym} 오류 {code} {g(root, ".//resultMsg")}')
         items = root.findall('.//item'); rows += items
         total = int(g(root, './/totalCount') or 0)
@@ -49,6 +55,8 @@ def norm_jb(s):
         s = (a.lstrip('0') or '0') + ('' if b == '0' else '-' + b)
     else: s = s.lstrip('0') or s
     return s
+
+fetch.first = True
 
 def rec(it, ym):
     amt = g(it, 'dealAmount', '거래금액').replace(',', '')
@@ -88,5 +96,7 @@ def main():
     json.dump({'updated': datetime.date.today().isoformat(), 'count': summary},
               open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     print('API 호출', calls, '번')
+    if not sum(summary.values()):
+        raise SystemExit('받은 거래가 0건이에요. 위의 첫 응답 예시를 확인해 주세요.')
 
 main()
