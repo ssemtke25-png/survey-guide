@@ -536,15 +536,17 @@ function renderContact(){
   const lx=findLX(S.parcel.addr),lxName=lx?lx.name.replace(/\(.*\)/,''):'LX 지사',ll=lx&&GEO[lx.road];
   const toLX=lx?(ll?kakaoTo('LX '+lxName,ll[0],ll[1]):kakaoFind(lx.road)):kakaoFind('한국국토정보공사 '+A.short);
   if(lx&&!(lx.road in GEO)&&window.__geocode)window.__geocode(lx.road).then(()=>{if(S.parcel)renderContact()});
-  const toOffice=c.lat&&c.lon?kakaoTo(office,c.lat,c.lon):kakaoFind(office);
+  const og=c.lat&&c.lon?[c.lat,c.lon]:(c.place&&GEO[c.place]);
+  if(c.place&&!og&&!(c.place in GEO)&&window.__geocode)window.__geocode(c.place).then(()=>{if(S.parcel)renderContact()});
+  const toOffice=og?kakaoTo(office,og[0],og[1]):kakaoFind(c.place||office);
   const tel=(t,label)=>`<a href="tel:${esc(String(t).replace(/[^0-9]/g,''))}">${esc(t)} ${label||'전화'}</a>`;
   $('contact').innerHTML=`<h3>어디에 물어보나요?</h3>
    <div class="who"><b>측량 신청·수수료·일정</b> <span class="hint">LX 지사</span>
     <div class="call"><div>${lx?`LX ${esc(lx.name)}<br><span class="hint">${esc(lx.addr)}</span>`:'관할 LX 지사'}</div>${lx?tel(lx.tel):tel('1588-7704','고객센터')}</div>
     <div class="gos one">${goBtn('LX '+lxName+' 가는 길',toLX)}</div>${altMaps(lx?lx.road:'한국국토정보공사 '+A.short,ll)}</div>
    <div class="who"><b>분할 허가·지적공부·토지 이동</b> <span class="hint">${esc(office||'시·군·구청')}</span>
-    <div class="call"><div>${esc(office||'시·군·구청')}${c.dept?' '+esc(c.dept):' 지적 담당 부서'}<br><span class="hint">대표번호로 걸어 '지적 담당'을 찾아 주세요</span></div>${c.tel?tel(c.tel,'대표'):''}</div>
-    <div class="gos one">${goBtn(office+' 가는 길',toOffice)}</div>${altMaps(office,c.lat&&c.lon?[c.lat,c.lon]:null)}</div>
+    <div class="call"><div>${esc(office||'시·군·구청')}${c.dept?' '+esc(c.dept):' 지적 담당 부서'}<br><span class="hint">${c.place?esc(c.place)+'<br>':''}대표번호로 걸어 '지적 담당'을 찾아 주세요</span></div>${c.tel?tel(c.tel,'대표'):''}</div>
+    <div class="gos one">${goBtn(office+' 가는 길',toOffice)}</div>${altMaps(c.place||office,og||null)}</div>
    <p class="hint" style="margin:8px 0 0">가는 길은 카카오맵으로 열려요. 신분증을 챙기시고, 대리인은 위임장이 필요해요. 방문하지 않고 <a href="https://baro.lx.or.kr" target="_blank" rel="noopener">LX 지적측량신청포털</a>로 신청해도 돼요.</p>`;
 }
 
