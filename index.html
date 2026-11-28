@@ -366,6 +366,7 @@ async function extraInfo(p){const log=PROBE?[]:null;
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
+  if(p.bld&&!p.bld.length)p.bld=null;if(p.mv&&!p.mv.length)p.mv=null;
   if(log)p.probe=log.join('\n\n');
   // 하나라도 통신이 실패했으면 '다 받았음(xi)' 표시를 하지 않음 → 다음에 다시 받아 옴 (빈 칸이 7일 동안 굳는 것 방지)
   if(!log&&p.pnu){const v={};if(b!==undefined)v.bld=p.bld||null;if(m!==undefined)v.mv=p.mv||null;if(lc!==undefined)v.lc=p.lc||null;
@@ -812,7 +813,7 @@ window.__ned=(...a)=>ned(...a);async function ned(path,params){
     sc.src=url+q;document.head.appendChild(sc)})}
 const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(const v of Object.values(o))deep(v,k,out)}return out};
 // 한 번 본 땅 정보는 이 기기에 7일 저장 (브이월드 요청 줄이기)
-const LC='sg_ledger',LDAY=7*864e5;
+const LC='sg_ledger2',LDAY=7*864e5;
 const lcGet=pnu=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}')[pnu];return o&&Date.now()-o.t<LDAY?o:null}catch(e){return null}};
 const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({},o[pnu]||{},v,{t:Date.now()});const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
 async function ledger(p){
@@ -822,7 +823,7 @@ async function ledger(p){
     for(const k of ['jimok','scale','price','year','hist','uses','road','own'])if(c[k]!=null)p[k]=c[k];
     if(c.price)S.price=c.price;if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}
     if(!p.road)roadAddr(p).then(()=>{if(S.parcel!==p)return;if(p.road)lcPut(pnu,Object.assign({},c,{road:p.road}));render();addrTip()});
-    if(c.xi&&!PROBE&&(c.bld||c.mv||c.lc)){for(const k of ['bld','mv','lc'])if(c[k])p[k]=c[k];aptInfo(p).then(()=>{if(S.parcel===p&&p.apt)render()}).catch(()=>{})}
+    if(c.xi&&!PROBE&&((c.bld&&c.bld.length)||(c.mv&&c.mv.length)||(c.lc&&c.lc.use!==undefined))){for(const k of ['bld','mv','lc'])if(c[k])p[k]=c[k];aptInfo(p).then(()=>{if(S.parcel===p&&p.apt)render()}).catch(()=>{})}
     else extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
     if(PENDING){applyShare(PENDING);PENDING=null}render();return}
   const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
