@@ -977,7 +977,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);{const cc=(lat&&lon)?L.latLng(lat,lon):gj.getBounds().getCenter();S.parcel.rv=[+cc.lat.toFixed(6),+cc.lng.toFixed(6)]}if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
-    window.__T&&__T('땅 누름',{시도:(S.parcel.addr||'').split(' ')[0]});ledger(S.parcel);{const t=$('tlTour');if(S.parcel.center){window.__tourAt=`${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`;if(t)t.href=`tour.html#${window.__tourAt}`}}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
+    window.__T&&__T('땅 누름',{시도:(S.parcel.addr||'').split(' ')[0]});ledger(S.parcel);{const t=$('tlTour');if(S.parcel.center){window.__tourAt=`${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`;if(t)t.href=`tour.html?v=${PAGEV}#${window.__tourAt}`}}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }
@@ -1152,16 +1152,18 @@ if(PENDING&&KEY)pick(0,0,PENDING.get('p'));
 </script>
 <script>
 // 창 탭 : 아파트 거래·가볼 만한 곳은 처음 누를 때 한 번만 불러오고, 그 뒤로는 숨겼다 보였다만 함
+// 탭 안 페이지는 브라우저가 예전 파일을 들고 있지 않게 버전 꼬리표를 붙여 부름 (sw.js 버전과 같이 올림)
+const PAGEV='66';
 (()=>{const bar=document.querySelector('.wtabs');if(!bar)return;const F={apt:document.getElementById('vApt'),tour:document.getElementById('vTour')};
   let last='land';
   // 아파트 거래로 갈 때 볼 자리 : 가볼 만한 곳에서 왔으면 그 지도 가운데, 아니면 고른 땅(없으면 지도 가운데)
   const here=()=>{try{if(last==='tour'&&F.tour.contentWindow.__tourMap){const c=F.tour.contentWindow.__tourMap.getCenter();return `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}}catch(e){}
     const p=window.S_parcel&&window.S_parcel();if(p&&p.center)return `${p.center[0].toFixed(5)},${p.center[1].toFixed(5)}`;
     if(window.__map){const c=window.__map.getCenter();return `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}return ''};
-  const show=v=>{if(v==='apt'){const at=here();if(at){if(!F.apt.src)F.apt.src=`apt.html#${at}`;else if(F.apt.dataset.at!==at){try{F.apt.contentWindow.location.hash=at}catch(e){}}F.apt.dataset.at=at}}
+  const show=v=>{if(v==='apt'){const at=here();if(at){if(!F.apt.src)F.apt.src=`apt.html?v=${PAGEV}#${at}`;else if(F.apt.dataset.at!==at){try{F.apt.contentWindow.location.hash=at}catch(e){}}F.apt.dataset.at=at}}
     if(v==='tour'&&last!=='tour'&&!window.__tourAt&&window.__map){const c=window.__map.getCenter();if(window.__map.getZoom()>=12)window.__tourAt=`${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}
     last=v;[...bar.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
-    for(const k in F){const f=F[k];if(k===v){if(!f.src){f.src=k==='tour'&&window.__tourAt?`tour.html#${window.__tourAt}`:`${k}.html`;f.dataset.at=window.__tourAt||''}
+    for(const k in F){const f=F[k];if(k===v){if(!f.src){f.src=k==='tour'&&window.__tourAt?`tour.html?v=${PAGEV}#${window.__tourAt}`:`${k}.html?v=${PAGEV}`;f.dataset.at=window.__tourAt||''}
       else if(k==='tour'&&window.__tourAt&&f.dataset.at!==window.__tourAt){try{f.contentWindow.location.hash=window.__tourAt}catch(e){}f.dataset.at=window.__tourAt}f.hidden=false}else f.hidden=true}
     if(v==='land'&&window.__map)setTimeout(()=>window.__map.invalidateSize(),0)};
   bar.onclick=e=>{const b=e.target.closest('button[data-v]');if(b)show(b.dataset.v)};window.__showTab=show})();
