@@ -320,6 +320,22 @@ const ymd=v=>{v=String(v||'').replace(/[^0-9]/g,'');return v.length>=8?`${v.slic
 function lcHTML(c){const it=(k,v,warn)=>v?`<div><span>${k}</span><b${warn?' style="color:var(--red)"':''}>${esc(v)}</b></div>`:'';
   return `<div class="hist lc"><div class="hh2"><b>토지 특성</b><span class="hint">${c.year?esc(c.year)+'년 ':''}토지특성조사 기준 ${qm('lc')}</span></div><div class="lcg">
   ${it('이용 상황',c.use)}${it('도로 접면',c.road,/맹지/.test(c.road))}${it('지형 높이',c.hg)}${it('지형 모양',c.frm)}</div>${/맹지/.test(c.road)?'<div class="hint" style="color:var(--red)">맹지 : 도로에 붙어 있지 않은 땅이에요. 건축 허가가 어려울 수 있어요.</div>':''}</div>`}
+// ---------- 아파트 실거래가 (GitHub Actions가 매달 모아 둔 data/apt/시군구.json) — 담당자 확인 전까지 ?apt=1 일 때만
+const APT_ON=window.APT_ON||/[?&]apt=1/.test(location.search),APT_CACHE={};
+const eok=m=>{m=+m;const e=Math.floor(m/10000),r=m%10000;return (e?e+'억':'')+(r?(e?' ':'')+r.toLocaleString()+'만':'')+'원'};
+async function aptInfo(p){if(!APT_ON||!p.pnu||!/^47/.test(p.pnu))return;const sgg=p.pnu.slice(0,5),umd=p.pnu.slice(5,10);
+  if(!(sgg in APT_CACHE))APT_CACHE[sgg]=fetch(`data/apt/${sgg}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
+  const d=await APT_CACHE[sgg];if(!d||!d.rows)return;const t=String(p.addr).trim().split(/\s+/),jb=t.pop().replace(/^산/,''),dong=t.pop();
+  if(p.pnu[10]==='2')return;const rows=d.rows.filter(r=>!r.c&&r.jb===jb&&(r.umdCd?r.umdCd===umd:r.umd===dong));
+  if(rows.length)p.apt={n:rows[0].n,by:rows[0].by,rows,upd:d.updated}}
+function aptHTML(a){const R=a.rows,grp={};R.forEach(r=>{const k=Math.round(+r.a);(grp[k]=grp[k]||[]).push(r)});
+  const ds=v=>v?`${v.slice(0,4)}.${v.slice(4,6)}.${v.slice(6,8)}`:'';
+  const g=Object.keys(grp).map(Number).sort((x,y)=>x-y).map(k=>{const L=grp[k],r=L[0];return `<tr><td>${k}㎡ <span class="hint">(${Math.round(k*0.3025)}평)</span></td><td style="text-align:right"><b>${eok(r.p)}</b></td><td class="hint">${ds(r.d)} · ${esc(r.f)}층</td><td class="hint" style="text-align:right">${L.length}건</td></tr>`}).join('');
+  const rec=R.slice(0,8).map(r=>`<tr><td>${ds(r.d)}</td><td>${Math.round(+r.a)}㎡</td><td>${esc(r.f)}층</td><td style="text-align:right">${eok(r.p)}</td></tr>`).join('');
+  return `<details class="hist mv" open><summary class="hh2"><b>아파트 실거래가</b><span class="hint">${esc(a.n)}${a.by?' · '+esc(a.by)+'년':''} · 최근 3년 ${R.length}건</span></summary>
+  <div class="hint" style="margin-top:4px">면적별 가장 최근 거래</div><table><tbody>${g}</tbody></table>
+  <div class="hint" style="margin-top:8px">최근 거래</div><table><thead><tr><th>계약일</th><th>전용</th><th>층</th><th style="text-align:right">금액</th></tr></thead><tbody>${rec}</tbody></table>
+  <div class="hint" style="margin-top:4px">국토교통부 실거래가 공개 자료 (${esc(a.upd||'')} 기준, 해제된 거래 제외) · 참고용</div></details>`}
 function bldHTML(b){return `<div class="hist"><div class="hh2"><b>건물${b.length>1?' '+b.length+'동':''}</b><span class="hint">건축물대장 기준</span></div>`+
   b.slice(0,5).map(x=>`<div class="bl"><b>${esc(x.name||x.use||'건물')}</b>${x.name&&x.use?` <span>${esc(x.use)}</span>`:''}<div class="hint">${[x.year?'사용승인 '+x.year:'',x.area?'연면적 '+(+x.area).toLocaleString(undefined,{maximumFractionDigits:2})+'㎡ ('+Math.round(x.area*0.3025).toLocaleString()+'평)':'',x.fl?'지상 '+x.fl+'층'+(x.ufl&&+x.ufl?' · 지하 '+x.ufl+'층':''):'',x.str||''].filter(Boolean).join(' · ')}</div></div>`).join('')+
   (b.length>5?`<div class="hint">외 ${b.length-5}동</div>`:'')+`</div>`}
@@ -332,7 +348,7 @@ const PROBE=/[?&]probe=1/.test(location.search);
 async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
     if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
 async function extraInfo(p){const log=PROBE?[]:null;
-  let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log)]);
+  let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log),aptInfo(p).catch(()=>{})]);
   if(lc){const o=lc.slice().sort((a,b)=>String(pickF(b,[/stdrYear/i])).localeCompare(String(pickF(a,[/stdrYear/i]))))[0];
     p.lc={year:String(pickF(o,[/stdrYear/i])||''),use:String(pickF(o,[/ladUseSittn.*Nm$/i,/UseSittn.*Nm$/i])||''),hg:String(pickF(o,[/tpgrphHg.*Nm$/i])||''),
       frm:String(pickF(o,[/tpgrphFrm.*Nm$/i])||''),road:String(pickF(o,[/roadSide.*Nm$/i])||'')};if(!(p.lc.use||p.hg||p.lc.road||p.lc.hg))p.lc=null}
@@ -364,6 +380,7 @@ function infoHTML(){
     +(p&&p.hist&&p.hist.length>1?histHTML(p.hist):'')
     +(p&&p.lc?lcHTML(p.lc):'')
     +(p&&p.bld&&p.bld.length?bldHTML(p.bld):'')
+    +(p&&p.apt?aptHTML(p.apt):'')
     +(p&&p.mv&&p.mv.length?mvHTML(p.mv):'')
     +(p&&p.probe?`<details class="hist" open><summary>API 점검 결과 (probe)</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:340px;overflow:auto">${esc(p.probe)}</pre></details>`:'')
     :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
@@ -596,6 +613,7 @@ function sumHTML(){const r=compute(S),p=S.parcel,lx=p&&typeof findLX==='function
    ${row('용도지역',zones.length?`<b>${esc(zones.join(', '))}</b>${etc.length?`<br><span class="hint">${esc(etc.slice(0,6).join(' · '))}${etc.length>6?` 외 ${etc.length-6}건`:''}</span>`:''}`:'')}
    ${p&&p.lc?row('토지 특성',esc([p.lc.use,p.lc.road?(/맹지/.test(p.lc.road)?p.lc.road:'도로 접면 '+p.lc.road):'',p.lc.hg,p.lc.frm].filter(Boolean).join(' · '))):''}
    ${row('건물',esc(bTxt))}
+   ${p&&p.apt?row('아파트 실거래',`${esc(p.apt.n)} · 최근 ${esc(p.apt.rows[0].d.replace(/(\d{4})(\d\d)(\d\d)/,'$1.$2.$3'))} 전용 ${Math.round(+p.apt.rows[0].a)}㎡ ${esc(p.apt.rows[0].f)}층 <b>${eok(p.apt.rows[0].p)}</b> <span class="hint">(최근 3년 ${p.apt.rows.length}건)</span>`):''}
    ${row('토지 이동',MV?MV.map(x=>`${esc(x.d||'-')} ${esc(x.why)}`).join('<br>')+(p.mv.length>3?`<span class="hint"> 외 ${p.mv.length-3}건</span>`:''):'')}
   </tbody></table>
   <div class="sumBig"><div class="sbk">${esc(r.K.n)}<span class="hint"> · ${esc(det)}${S.desig?` · ${S.desig===.4?'면적':'선'} 지정`:''}${S.red!=='none'?' · '+esc(REDS.find(x=>x[0]===S.red)[1])+' 감면':''}</span></div>
