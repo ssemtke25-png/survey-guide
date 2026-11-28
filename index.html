@@ -91,6 +91,8 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .sphandle{background:#fff;border:3px solid #111;border-radius:50%;box-sizing:border-box}
 .qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:3px;border-radius:50%;border:1.5px solid var(--blue);background:#fff;color:var(--blue);font-size:11.5px;font-weight:900;cursor:pointer;padding:0;vertical-align:1px;line-height:1}
 .gbub{position:fixed;z-index:4000;background:#17203a;color:#fff;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.25)}.gbub b{display:block;color:#ffd84d;margin-bottom:2px}
+.qrpop{position:absolute;z-index:2500;right:18px;top:64px;width:230px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;font-size:13px}.qrpop[hidden]{display:none}.qrpop #qrImg{width:180px;height:180px;margin:0 auto 8px}.qrpop #qrImg svg,.qrpop #qrImg img{width:180px;height:180px;display:block}.qrpop b{display:block;font-size:14px}.qrpop span{display:block;color:var(--mut);font-size:12px;margin-top:3px;word-break:keep-all}.qrpop #qrX{position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;color:var(--mut);cursor:pointer}
+@media(max-width:860px){#bQR{display:none!important}}
 .toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.tbtn{display:flex;gap:6px;flex-wrap:wrap}.tbtn button{border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.tbtn b{font-size:16px}.tbtn button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .bigtext .side{zoom:1.2}.bigtext .gbub{font-size:16px}
 .parts small{color:var(--mut);font-size:11px}
@@ -171,7 +173,7 @@ tr.sum td{font-weight:900}
   <div class="mapwrap">
     <div id="map" aria-label="지적도 지도"></div>
     <form class="search" id="sForm" role="search">
-      <input id="sQ" type="search" placeholder="지번이나 도로명 (예: 안동시 풍천면 갈전리 1155)" autocomplete="off" aria-label="주소 검색">
+      <input id="sQ" type="search" placeholder="지번·도로명·장소 (예: 안동시 풍천면 갈전리 1155, 경북도청)" autocomplete="off" aria-label="주소 검색">
       <button type="submit">찾기</button>
     </form>
     <div class="hits" id="hits" hidden></div>
@@ -192,7 +194,8 @@ tr.sum td{font-weight:900}
   </div>
   <div class="side" id="side">
     <div class="sheethd" id="sheetHd"><div class="grab"></div><div class="shrow"><b id="shTitle">지도에서 내 땅을 콕 눌러 보세요</b><span id="shFee"></span></div></div>
-    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button></div></div>
+    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button><button type="button" id="bQR" title="휴대폰으로 이어 보기">📱 휴대폰으로</button></div></div>
+    <div class="qrpop" id="qrPop" hidden><div id="qrImg"></div><b id="qrT">휴대폰 카메라로 찍어 보세요</b><span id="qrS"></span><button type="button" id="qrX" aria-label="닫기">✕</button></div>
     <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
 
@@ -649,6 +652,16 @@ $('bInst').onclick=async()=>{
   if(INST){INST.prompt();const r=await INST.userChoice;INST=null;if(r&&r.outcome==='accepted')$('bInst').hidden=true;return}
   if(isIOS)return alert("사파리 아래쪽 공유 버튼(□↑)을 누르고 '홈 화면에 추가'를 고르세요.");
   alert("브라우저 메뉴(⋮)에서 '홈 화면에 추가'를 고르세요.")};
+// PC → 휴대폰 : 지금 보고 있는 땅을 QR로 (QR 그리는 파일은 처음 누를 때만 받음)
+{let lib=null;const load=()=>lib||(lib=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='qrcode.js';sc.onload=()=>ok(window.qrcode);sc.onerror=no;document.head.appendChild(sc)}));
+ const pop=$('qrPop'),side=$('side');if(side&&pop.parentNode!==side){side.style.position=side.style.position||'relative';side.appendChild(pop)}
+ $('bQR').onclick=async e=>{e.stopPropagation();if(!pop.hidden){pop.hidden=true;return}
+   const url=S.parcel?shareURL():location.origin+location.pathname;
+   $('qrT').textContent=S.parcel?'이 땅을 휴대폰에서 이어 보기':'휴대폰에서 내땅 보이소 열기';
+   $('qrS').textContent=S.parcel?S.parcel.addr:'카메라로 찍으면 바로 열려요';
+   try{const q=(await load())(0,'M');q.addData(url);q.make();$('qrImg').innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true})}catch(err){$('qrImg').textContent='QR을 만들지 못했어요'}
+   pop.hidden=false};
+ $('qrX').onclick=()=>pop.hidden=true;document.addEventListener('click',e=>{if(!pop.hidden&&!e.target.closest('#qrPop,#bQR'))pop.hidden=true})}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 // 오른쪽 안내 칸 접기·펴기 (PC)
 const setSide=off=>{document.body.classList.toggle('sideoff',off);const b=$('bSide');b.textContent=off?'‹':'›';b.setAttribute('aria-label',off?'오른쪽 안내 칸 펴기':'오른쪽 안내 칸 접기');
@@ -734,9 +747,11 @@ map.on('moveend',()=>{if(!jbOn)return;clearTimeout(jbT);jbT=setTimeout(loadJibun
 const NAMES=KEY?L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Hybrid/{z}/{y}/{x}.png`,{maxZoom:21,maxNativeZoom:19,referrerPolicy:'no-referrer',attribution:'브이월드',...FAST}):null;
 // 겹쳐 보기 : 용도지역(lt_c_uq111~114), 도시계획시설(lt_c_upisuq151~159) — 지적선 아래에 깔림
 const OVL={};
-function ovl(name,lays){if(!KEY)return null;const L2=lays.join(',');return L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:L2,styles:L2,format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:12,maxZoom:21,opacity:.55,referrerPolicy:'no-referrer',tileSize:512,...FAST,attribution:'브이월드 '+name})}
+// 브이월드 WMS는 한 번에 레이어 4개까지라 4개씩 나눠 받음
+function ovl(name,lays,op){if(!KEY)return null;if(lays.length>4){const g=L.layerGroup();for(let i=0;i<lays.length;i+=4)g.addLayer(ovl(name,lays.slice(i,i+4),op));g.bringToBack=()=>{g.eachLayer(x=>x.bringToBack());return g};return g}
+  const L2=lays.join(',');return L.tileLayer.wms('https://api.vworld.kr/req/wms',{layers:L2,styles:L2,format:'image/png',transparent:true,version:'1.3.0',crs:CRS900913,key:KEY,domain:DOMAIN,minZoom:12,maxZoom:21,opacity:op||.55,referrerPolicy:'no-referrer',tileSize:512,...FAST,attribution:'브이월드 '+name})}
 OVL.use=ovl('용도지역',['lt_c_uq111','lt_c_uq112','lt_c_uq113','lt_c_uq114']);
-OVL.plan=ovl('도시계획',['lt_c_upisuq151','lt_c_upisuq152','lt_c_upisuq153','lt_c_upisuq154','lt_c_upisuq155','lt_c_upisuq156','lt_c_upisuq157','lt_c_upisuq158','lt_c_upisuq159']);
+OVL.plan=ovl('도시계획',['lt_c_upisuq151','lt_c_upisuq152','lt_c_upisuq153','lt_c_upisuq154','lt_c_upisuq155','lt_c_upisuq156','lt_c_upisuq157','lt_c_upisuq158','lt_c_upisuq159'],.8);
 function legend(){const box=$('legend');if(!box)return;const ks=[];if(isOn('bUse'))ks.push(['용도지역','lt_c_uq111']);if(isOn('bPlan'))ks.push(['도시계획(도로)','lt_c_upisuq151']);
   box.hidden=!ks.length;box.innerHTML='<div class="lghd"><span>⠿ 범례 · 끌어서 옮기기</span><button type="button" id="lgFold">접기</button></div><div class="lgbd">'+ks.map(([t,l])=>`<div><b>${t}</b><img alt="${t} 범례" src="https://api.vworld.kr/req/image?service=image&request=GetLegendGraphic&format=png&type=ALL&layer=${l}&style=${l}&key=${encodeURIComponent(KEY)}&domain=${encodeURIComponent(DOMAIN)}" onerror="this.replaceWith(Object.assign(document.createElement('small'),{textContent:'지도를 눌러 이름을 확인하세요'}))"></div>`).join('')+'<small>지도를 누르면 그 자리 이름이 떠요</small></div>';
   $('lgFold').onclick=e=>{e.stopPropagation();box.classList.toggle('fold');$('lgFold').textContent=box.classList.contains('fold')?'펴기':'접기'}}
@@ -859,6 +874,8 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }
+// 지적선은 많이 축소하면 안 보이므로 안내
+{let far=false;map.on('zoomend',()=>{const f=map.getZoom()<16;if(f&&!far)tip('지적선은 조금 더 확대하면 보여요');else if(!f&&far){if(S.parcel)addrTip();else tip('내 땅을 눌러 주세요')}far=f})}
 map.on('click',e=>{if(window.__meas&&window.__meas.on)return window.__meas.tap(e.latlng);if(window.__split&&window.__split.on)return window.__split.tap(e.latlng);pick(e.latlng.lat,e.latlng.lng);identify(e.latlng)});
 // 겹쳐 보기를 켠 상태에서 누른 자리의 용도지역·도시계획 이름을 말풍선으로
 const isOn=id=>$(id)&&$(id).getAttribute('aria-pressed')==='true';
@@ -998,15 +1015,19 @@ $('sForm').onsubmit=async e=>{e.preventDefault();const q=$('sQ').value.trim();if
   if(!KEY)return tip('주소 찾기는 브이월드 키가 있어야 해요');
   const box=$('hits');box.hidden=false;box.innerHTML='<button type="button" disabled>찾는 중…</button>';
   try{
-    let items=[],hit='parcel';const isRoad=/[가-힣0-9](로|길)\s*\d/.test(q)||/(로|길)$/.test(q);
-    for(const cat of isRoad?['road','parcel']:['parcel','road']){
+    let items=[],hit='parcel';const isRoad=/[가-힣0-9](로|길)\s*\d/.test(q)||/(로|길)$/.test(q),isName=!/\d/.test(q);
+    // 숫자가 없으면 이름(장소)부터 : 경북도청, 안동역, ○○아파트
+    if(isName){try{const d=await vw('search',{service:'search',request:'search',version:'2.0',crs:'EPSG:4326',size:'10',page:'1',query:q,type:'place'});
+      const it=d&&d.response&&d.response.result&&d.response.result.items;if(it&&it.length){items=it;hit='place'}}catch(e){}}
+    if(!items.length)for(const cat of isRoad?['road','parcel']:['parcel','road']){
       const d=await vw('search',{service:'search',request:'search',version:'2.0',crs:'EPSG:4326',size:'8',page:'1',query:q,type:'address',category:cat});
       const it=d&&d.response&&d.response.result&&d.response.result.items;if(it&&it.length){const seen=new Set();items=it.filter(x=>{const k=x.address&&(cat==='road'?x.address.road:x.address.parcel)||x.title;if(seen.has(k))return false;seen.add(k);return true});hit=cat;break}}
     if(!items.length){box.innerHTML='<button type="button" disabled>찾는 주소가 없어요. 시·군과 동·리를 함께 넣어 보세요</button>';return}
-    box.innerHTML=items.map((it,i)=>{const a=it.address||{},main=(hit==='road'?a.road||a.parcel:a.parcel||a.road)||it.title||'',sub=hit==='road'?a.parcel:a.road;
+    box.innerHTML=items.map((it,i)=>{const a=it.address||{};if(hit==='place'){const ad=a.road||a.parcel||'';return `<button type="button" data-i="${i}">${esc(it.title||'')}${it.category?` <small style="color:var(--mut);font-size:12px">${esc(String(it.category).split('>').pop().trim())}</small>`:''}${ad?`<small style="display:block;color:var(--mut);font-size:12px">${esc(ad)}</small>`:''}</button>`}
+      const main=(hit==='road'?a.road||a.parcel:a.parcel||a.road)||it.title||'',sub=hit==='road'?a.parcel:a.road;
       return `<button type="button" data-i="${i}">${esc(main)}${sub?`<small style="display:block;color:var(--mut);font-size:12px">${hit==='road'?'지번 ':'도로명 '}${esc(sub)}</small>`:''}</button>`}).join('');
     box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const it=items[+b.dataset.i];box.hidden=true;
-      const x=+it.point.x,y=+it.point.y,id=String(it.id||'');window.__searchRoad=(it.address&&it.address.road)||'';map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
+      const x=+it.point.x,y=+it.point.y,id=hit==='place'?'':String(it.id||'');window.__searchRoad=(it.address&&it.address.road)||'';map.setView([y,x],18);pick(y,x,/^\d{19}$/.test(id)?id:null)};
   }catch(err){box.innerHTML=`<button type="button" disabled>${esc(err.message)}</button>`}};
 document.addEventListener('click',e=>{if(!e.target.closest('#hits,#sForm'))$('hits').hidden=true});
 if(!KEY)tip('지도 인증키가 없어 지도를 쓸 수 없어요. 수수료는 오른쪽 칸에 직접 넣어 계산할 수 있어요');
