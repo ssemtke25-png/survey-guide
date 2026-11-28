@@ -40,9 +40,10 @@ def call(op, **params):
     else:
         print(f'{op} 응답이 계속 없어서 오늘은 여기까지 받고 저장해요'); raise OutOfBudget()
     if call.first: print('첫 응답 예시:', txt[:500]); call.first = False
-    if 'LIMITED' in txt or 'EXCEEDS' in txt: print('오늘 호출 한도에 닿았어요.'); raise OutOfBudget()
     try: d = json.loads(txt)
     except ValueError:
+        # 한도 초과 안내는 JSON이 아닌 모양으로 옴 (소개글 안에 영어 LIMITED가 있어도 멈추지 않게 여기서만 확인)
+        if 'LIMITED' in txt or 'EXCEEDS' in txt: print('오늘 호출 한도에 닿았어요.'); raise OutOfBudget()
         if VER == 0 and op == 'areaBasedList':
             print('새 판 응답이 이상해서 예전 판으로 바꿔요:', txt[:200].replace('\n', ' ')); VER = 1; return call(op, **params)
         if op in ('detailCommon', 'detailIntro'): print('소개글 응답이 이상해서 오늘은 여기까지:', txt[:300]); raise OutOfBudget()
