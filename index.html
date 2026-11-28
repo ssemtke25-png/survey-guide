@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<link rel="preconnect" href="https://api.vworld.kr" crossorigin><link rel="dns-prefetch" href="https://api.vworld.kr">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>내땅 보이소 - 지도에서 콕 누르면 공시지가·용도지역·측량 수수료</title>
 <meta name="description" content="내땅 보이소 : 지도에서 내 땅을 누르면 공시지가와 연도별 추이, 용도지역, 지적측량 예상 수수료(경계복원·분할·지적현황·등록전환), 관할 LX 지사와 신청 방법을 한 번에 알려 드려요.">
@@ -349,8 +350,8 @@ function mvHTML(m){const rows=m.map(x=>`<tr><td>${esc(x.d||'-')}</td><td>${esc(x
 const firstArr=o=>{if(Array.isArray(o))return o.length&&typeof o[0]==='object'?o:null;if(o&&typeof o==='object')for(const k in o){const r=firstArr(o[k]);if(r)return r}return null};
 const API_BLD=['getBuildingUse','getBuildingAge'],API_MV=['getLandMoveAttr'],API_LC=['getLandCharacteristics','getLandCharacteristicsAttr'];
 const PROBE=/[?&]probe=1/.test(location.search);
-async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d);
-    if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
+async function tryNed(list,pnu,log){for(const op of list){try{const d=await window.__ned(op,{pnu,numOfRows:'100'});const a=firstArr(d),ok=!a&&/totalCount/.test(JSON.stringify(d||{}));
+    if(log)log.push(op+' → '+(a?a.length+'건\n'+JSON.stringify(a.slice(0,2),null,1):JSON.stringify(d).slice(0,300)));if(a)return a;if(ok)return null}catch(e){if(log)log.push(op+' → 오류 '+e.message)}}return null}
 async function extraInfo(p){const log=PROBE?[]:null;
   let [b,m,lc]=await Promise.all([tryNed(API_BLD,p.pnu,log),tryNed(API_MV,p.pnu,log),tryNed(API_LC,p.pnu,log),aptInfo(p).catch(()=>{})]);
   if(lc){const o=lc.slice().sort((a,b)=>String(pickF(b,[/stdrYear/i])).localeCompare(String(pickF(a,[/stdrYear/i]))))[0];
@@ -364,7 +365,8 @@ async function extraInfo(p){const log=PROBE?[]:null;
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
   if(m)p.mv=m.map(o=>({d:ymd(o.__d),why:String(o.ladMvmnPrvonshCodeNm||'').trim(),jb:String(o.mnnmSlno||''),
     jm:String(o.lndcgrCodeNm||''),ar:o.lndpclAr||''})).filter(x=>x.d||x.why).reverse();
-  if(log)p.probe=log.join('\n\n')}
+  if(log)p.probe=log.join('\n\n');
+  if(!log&&p.pnu)lcPut(p.pnu,{xi:1,bld:p.bld||null,mv:p.mv||null,lc:p.lc||null})}
 function useHTML(u){const isZone=n=>/(주거|상업|공업|녹지|관리|농림|자연환경보전)지역$/.test(n)&&!/구역|지구/.test(n);
   const z=u.filter(x=>isZone(x[0])),o=u.filter(x=>!isZone(x[0]));
   return `<div class="uses"><div class="uz"><span>용도지역 ${qm('use')}</span><b>${z.length?z.map(x=>esc(x[0])+(x[1]&&x[1]!=='포함'?` <small>(${esc(x[1])})</small>`:'')).join(', '):'확인 안 됨'}</b></div>
@@ -796,25 +798,28 @@ function vw(path,params,ms=9000){return new Promise((res,rej)=>{
 window.__ned=(...a)=>ned(...a);async function ned(path,params){
   const q=new URLSearchParams(Object.assign({key:KEY,domain:DOMAIN,format:'json',numOfRows:'50',pageNo:'1'},params));
   const url=`https://api.vworld.kr/ned/data/${path}?`;
-  try{const r=await fetch(url+q);if(r.ok)return await r.json()}catch(e){}
+  let M='';try{M=sessionStorage.getItem('sg_nedm')||''}catch(e){}
+  if(M!=='j'){try{const ac=new AbortController(),tt=setTimeout(()=>ac.abort(),6000);const r=await fetch(url+q,{signal:ac.signal});clearTimeout(tt);
+    if(r.ok){const j=await r.json();try{sessionStorage.setItem('sg_nedm','f')}catch(e){}return j}}catch(e){}}
   return new Promise((res,rej)=>{const cb='__ned'+(++seq),sc=document.createElement('script');q.set('callback',cb);
     const t=setTimeout(()=>{window[cb]=()=>delete window[cb];sc.remove();rej(new Error('대장 응답 없음'))},8000);
-    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();res(d)};
+    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();if(M!=='f')try{sessionStorage.setItem('sg_nedm','j')}catch(e){}res(d)};
     sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();rej(new Error('대장 연결 실패'))};
     sc.src=url+q;document.head.appendChild(sc)})}
 const deep=(o,k,out=[])=>{if(o&&typeof o==='object'){if(k in o)out.push(o);for(const v of Object.values(o))deep(v,k,out)}return out};
 // 한 번 본 땅 정보는 이 기기에 7일 저장 (브이월드 요청 줄이기)
 const LC='sg_ledger',LDAY=7*864e5;
 const lcGet=pnu=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}')[pnu];return o&&Date.now()-o.t<LDAY?o:null}catch(e){return null}};
-const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({t:Date.now()},v);const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
+const lcPut=(pnu,v)=>{try{const o=JSON.parse(localStorage.getItem(LC)||'{}');o[pnu]=Object.assign({},o[pnu]||{},v,{t:Date.now()});const ks=Object.keys(o).sort((a,b)=>o[b].t-o[a].t).slice(0,60);const n={};for(const k of ks)n[k]=o[k];localStorage.setItem(LC,JSON.stringify(n))}catch(e){}};
 async function ledger(p){
-  const pnu=p.pnu,same=()=>S.parcel&&S.parcel.pnu===pnu;
+  const pnu=p.pnu,same=()=>S.parcel&&S.parcel.pnu===pnu;let rq=0;const soon=()=>{if(same()&&!rq)rq=requestAnimationFrame(()=>{rq=0;if(same())render()})};
   const c=lcGet(pnu);
   if(c){if(c.area){S.area=c.area;S.partsEdited=false;p.areaSrc='대장'}else p.areaSrc='지도';
     for(const k of ['jimok','scale','price','year','hist','uses','road','own'])if(c[k]!=null)p[k]=c[k];
     if(c.price)S.price=c.price;if(p.scale&&/수치|없음|좌표|^0+$/.test(p.scale)&&S.land!=='임야'){S.land='수치';p.autoLand=true}
     if(!p.road)roadAddr(p).then(()=>{if(S.parcel!==p)return;if(p.road)lcPut(pnu,Object.assign({},c,{road:p.road}));render();addrTip()});
-    extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
+    if(c.xi&&!PROBE){for(const k of ['bld','mv','lc'])if(c[k])p[k]=c[k];aptInfo(p).then(()=>{if(S.parcel===p&&p.apt)render()}).catch(()=>{})}
+    else extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
     if(PENDING){applyShare(PENDING);PENDING=null}render();return}
   const job1=ned('ladfrlList',{pnu}).then(d=>{const it=deep(d,'lndpclAr')[0];if(!it||!same())throw 0;
       const a=parseFloat(it.lndpclAr);if(a>0){S.area=Math.round(a*10)/10;S.partsEdited=false;p.areaSrc='대장'}
@@ -828,7 +833,8 @@ async function ledger(p){
       const L=deep(d,'pblntfPclnd').filter(x=>+x.pblntfPclnd>0).sort((a,b)=>(b.stdrYear+(b.stdrMt||'')).localeCompare(a.stdrYear+(a.stdrMt||'')));
       if(L[0]){p.price=+L[0].pblntfPclnd;p.year=L[0].stdrYear;p.month='';S.price=p.price}
       const H={};for(const x of L){const y=String(x.stdrYear||'');if(y&&!(y in H))H[y]=+x.pblntfPclnd}p.hist=Object.keys(H).sort().map(y=>[y,H[y]]).slice(-10)}).catch(()=>{});
-  const job3=landUse(p).catch(()=>{}),job4=roadAddr(p).catch(()=>{});extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
+  job1.then(soon);job2.then(soon);
+  const job3=landUse(p).catch(()=>{}).then(soon),job4=roadAddr(p).catch(()=>{}).then(()=>{soon();if(same())addrTip()});extraInfo(p).then(()=>{if(S.parcel===p)render()}).catch(()=>{});
   await Promise.all([job1,job2,job3,job4]);if(same()){lcPut(pnu,{area:p.areaSrc==='대장'?S.area:0,jimok:p.jimok,scale:p.scale,price:p.price,year:p.year,hist:p.hist,uses:p.uses,road:p.road,own:p.own});if(PENDING){applyShare(PENDING);PENDING=null}render();addrTip()}
 }
 // 용도지역·지구 : 토지이용계획(NED) → 안 되면 용도지역 도면(2D 데이터)에서 찾기
