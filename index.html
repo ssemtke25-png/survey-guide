@@ -328,11 +328,15 @@ function lcHTML(c){const it=(k,v,warn)=>v?`<div><span>${k}</span><b${warn?' styl
 // ---------- 아파트 실거래가 (GitHub Actions가 매달 모아 둔 data/apt/시군구.json) — 공개 (끄려면 ?apt=0)
 const APT_ON=!/[?&]apt=0/.test(location.search),APT_CACHE={};
 const eok=m=>{m=+m;const e=Math.floor(m/10000),r=m%10000;return (e?e+'억':'')+(r?(e?' ':'')+r.toLocaleString()+'만':'')+'원'};
-async function aptInfo(p){if(!APT_ON||!p.pnu||!/^47/.test(p.pnu))return;const sgg=p.pnu.slice(0,5),umd=p.pnu.slice(5,10);
-  if(!(sgg in APT_CACHE))APT_CACHE[sgg]=fetch(`data/apt/${sgg}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
-  const d=await APT_CACHE[sgg];if(!d||!d.rows)return;const t=String(p.addr).trim().split(/\s+/),jb=t.pop().replace(/^산/,''),dong=t.pop();
-  if(p.pnu[10]==='2')return;const rows=d.rows.filter(r=>!r.c&&r.jb===jb&&(r.umdCd?r.umdCd===umd:r.umd===dong));
-  if(rows.length)p.apt={n:rows[0].n,by:rows[0].by,rows,upd:d.updated}}
+// 실거래 자료 : data/apt/{시군구}/{읍면동}.json (전국). 예전 경북 한 파일(data/apt/{시군구}.json)도 읽음
+const aptGet=u=>APT_CACHE[u]||(APT_CACHE[u]=fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));
+async function aptInfo(p){if(!APT_ON||!p.pnu)return;if(p.pnu[10]==='2')return;const sgg=p.pnu.slice(0,5),umd=p.pnu.slice(5,10);
+  // 구가 새로 생긴 시(화성 등)는 예전 시 코드(끝자리 0)로 모은 거래도 함께 봄
+  const tries=[`data/apt/${sgg}/${umd}.json`];if(sgg[4]!=='0')tries.push(`data/apt/${sgg.slice(0,4)}0/${umd}.json`);tries.push(`data/apt/${sgg}.json`);
+  const ds=(await Promise.all(tries.map(aptGet))).filter(d=>d&&d.rows);if(!ds.length)return;
+  const t=String(p.addr).trim().split(/\s+/),jb=t.pop().replace(/^산/,''),dong=t.pop(),seen=new Set();
+  const rows=ds.flatMap(d=>d.rows).filter(r=>!r.c&&r.jb===jb&&(r.umdCd?r.umdCd===umd:r.umd===dong)).filter(r=>{const k=[r.d,r.f,r.a,r.p].join();if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>String(b.d).localeCompare(String(a.d)));
+  if(rows.length)p.apt={n:rows[0].n,by:rows[0].by,rows,upd:ds[0].updated}}
 function aptHTML(a){const R=a.rows,grp={};R.forEach(r=>{const k=Math.round(+r.a);(grp[k]=grp[k]||[]).push(r)});
   const ds=v=>v?`${v.slice(0,4)}.${v.slice(4,6)}.${v.slice(6,8)}`:'';
   const g=Object.keys(grp).map(Number).sort((x,y)=>x-y).map(k=>{const L=grp[k],r=L[0];return `<tr><td>${k}㎡ <span class="hint">(${Math.round(k*0.3025)}평)</span></td><td style="text-align:right"><b>${eok(r.p)}</b></td><td class="hint">${ds(r.d)} · ${esc(r.f)}층</td><td class="hint" style="text-align:right">${L.length}건</td></tr>`}).join('');
