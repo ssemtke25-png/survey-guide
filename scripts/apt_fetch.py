@@ -76,6 +76,7 @@ def g(it, *names):
     return ''
 
 class OutOfBudget(Exception): pass
+class ServerDown(Exception): pass   # 국토부 쪽 HTTP_ERROR(04) : 오늘은 접고 내일 이어서
 
 def call(sgg, ym, page, rows=1000, probe=False):
     # probe=True : 코드가 있는지만 떠보기 (없는 코드는 04 오류가 오므로 오류면 None)
@@ -98,6 +99,10 @@ def call(sgg, ym, page, rows=1000, probe=False):
     if probe:
         if 'LIMITED' in txt or 'EXCEEDS' in txt or code == '22': raise OutOfBudget()
         return root if code in ('00', '000') else None
+    if not code and '<returnReasonCode>04<' in txt and not probe:
+        call.down = getattr(call, 'down', 0) + 1
+        if call.down >= 3: raise ServerDown(txt[:200])
+        time.sleep(20); return call(sgg, ym, page, rows, probe)
     if not code and call.first and URL != URLS[-1] and '<returnReasonCode>' in txt:
         print('상세판 응답 이상 → 일반판으로 바꿔서 다시 받아요:', txt[:200].replace('\n', ' '))
         URL = URLS[URLS.index(URL) + 1]; return call(sgg, ym, page, rows)
@@ -105,6 +110,7 @@ def call(sgg, ym, page, rows=1000, probe=False):
         if 'LIMITED' in txt or 'EXCEEDS' in txt:
             print('오늘 호출 한도에 닿았어요. 내일 이어서 받아요.'); raise OutOfBudget()
         raise SystemExit(f'{sgg} {ym} 응답 이상 (인증키·활용신청 확인): {txt[:400]}')
+    call.down = 0
     if call.first: print('첫 응답 예시:', txt[:400]); call.first = False
     if code not in ('00', '000'):
         if code == '22': print('오늘 호출 한도 초과(22). 내일 이어서 받아요.'); raise OutOfBudget()
@@ -149,13 +155,16 @@ def codes():
     # 바뀐 행정구역의 새 코드를 한 번 찾아 _codes.json에 저장 (지난달 거래가 1건이라도 있으면 사용)
     if os.path.exists(CODES):
         return json.load(open(CODES, encoding='utf-8'))['codes']
-    found = []; ym = months(2)[1]
+    found = []; ym = months(2)[1]; ok = 0
     for c in CAND:
         if c in SGG: continue
         root = call(c, ym, 1, rows=1, probe=True)
-        if root is not None and int(g(root, './/totalCount') or 0) > 0: found.append(c); print('새 시군구 코드 발견', c)
+        if root is not None:
+            ok += 1
+            if int(g(root, './/totalCount') or 0) > 0: found.append(c); print('새 시군구 코드 발견', c)
         time.sleep(0.1)
     out = SGG + found
+    if not ok: print('새 코드 찾기 응답이 하나도 없어서 다음에 다시 찾아요'); return out
     json.dump({'checked': datetime.date.today().isoformat(), 'added': found, 'codes': out}, open(CODES, 'w', encoding='utf-8'), ensure_ascii=False)
     return out
 
@@ -188,14 +197,38 @@ def write_index():
               open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     return cnt
 
+def write_summary():
+    # 대시보드용 요약 : 시군구별 월 거래량·㎡당 중위가격, 최근 12개월 최고가 5건, 최근 거래 8건 (해제된 거래 제외)
+    yms = sorted(months(KEEP)); out = {}
+    for d in sorted(glob.glob(os.path.join(OUT, '[0-9]' * 5))):
+        rows = []
+        for f in glob.glob(os.path.join(d, '*.json')): rows += [r for r in json.load(open(f, encoding='utf-8')).get('rows', []) if not r.get('c') and r.get('p')]
+        if not rows: continue
+        cnt = {y: 0 for y in yms}; per = {y: [] for y in yms}
+        for r in rows:
+            if r['ym'] in cnt:
+                cnt[r['ym']] += 1
+                try: per[r['ym']].append(r['p'] / float(r['a']))
+                except (ValueError, ZeroDivisionError): pass
+        med = lambda v: round(sorted(v)[len(v) // 2], 1) if v else 0
+        last12 = set(yms[-12:]); pick = lambda r: {k: r.get(k) for k in ('n', 'umd', 'jb', 'a', 'f', 'p', 'd')}
+        hi = sorted([r for r in rows if r['ym'] in last12], key=lambda r: r['p'], reverse=True)[:5]
+        rc = sorted(rows, key=lambda r: r['d'], reverse=True)[:8]
+        out[os.path.basename(d)] = {'c': [cnt[y] for y in yms], 'm': [med(per[y]) for y in yms], 'hi': [pick(r) for r in hi], 'r': [pick(r) for r in rc]}
+    json.dump({'updated': datetime.date.today().isoformat(), 'months': yms, 'sgg': out},
+              open(os.path.join(OUT, 'summary.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+
 def main():
-    if not KEY: raise SystemExit('DATA_GO_KR_KEY 가 없어요')
+    if not KEY and ARG != 'summary': raise SystemExit('DATA_GO_KR_KEY 가 없어요')
     os.makedirs(OUT, exist_ok=True)
+    if ARG == 'summary': write_summary(); print('요약만 다시 만들었어요'); return
     prog = json.load(open(PROG, encoding='utf-8')) if os.path.exists(PROG) else None
     if ARG == 'auto':
         if not prog:
-            if datetime.date.today().day != 5: print('이어 받을 것도 없고 갱신일(5일)도 아니에요. 끝.'); return
-            prog = {'months': months(3), 'done': []}
+            have = glob.glob(os.path.join(OUT, '[0-9]' * 5))
+            if not have: prog = {'months': months(KEEP), 'done': []}   # 아직 하나도 못 모았으면 처음부터
+            elif datetime.date.today().day != 5: print('이어 받을 것도 없고 갱신일(5일)도 아니에요. 끝.'); return
+            else: prog = {'months': months(3), 'done': []}
     else:
         prog = {'months': months(int(ARG)), 'done': []}   # 새로 시작
     yms = prog['months']
@@ -215,12 +248,16 @@ def main():
             print(sgg, '새로', len(rows), '건 · 보관', n, '건 · 누적 호출', calls)
             if not extra_done:   # 진짜 코드로 첫 응답을 확인한 뒤에 새 코드 찾기
                 extra_done = True; todo += [c for c in codes() if c not in SGG and c not in prog['done'] and c not in todo]
+    except ServerDown as e:
+        json.dump(prog, open(PROG, 'w', encoding='utf-8'), ensure_ascii=False)
+        print('국토부 서버가 응답을 못 하고 있어요(HTTP_ERROR 04). 받은 데까지 저장하고, 내일 새벽에 이어서 받아요.', str(e)[:120])
+        write_index(); write_summary(); return
     except OutOfBudget:
         json.dump(prog, open(PROG, 'w', encoding='utf-8'), ensure_ascii=False)
         print(f'이번엔 여기까지 (호출 {calls}번). 끝낸 시군구 {len(prog["done"])}곳. 다음 실행에서 이어서 받아요.')
-        write_index(); return
+        write_index(); write_summary(); return
     os.remove(PROG) if os.path.exists(PROG) else None
-    cnt = write_index()
+    cnt = write_index(); write_summary()
     print('다 받았어요. 시군구', len(cnt), '곳 · 거래', sum(cnt.values()), '건 · 호출', calls, '번')
     if not sum(cnt.values()): raise SystemExit('받은 거래가 0건이에요. 위의 첫 응답 예시를 확인해 주세요.')
 

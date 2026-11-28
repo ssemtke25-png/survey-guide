@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>아파트 거래 - 내땅 보이소</title>
+<meta name="description" content="전국 시군구별 아파트 매매 거래량과 가격을 지도로 봐요. 국토교통부 실거래가 공개 자료.">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#fff;--ink:#17203a;--mut:#5b6580;--line:#d9deea;--panel:#f4f6fb;--red:#d7262b;--blue:#1f4fbf;
+  --q0:#eef0f4;--q1:#cce3fd;--q2:#84b9f3;--q3:#338ced;--q4:#1b64be;--q5:#0e3d7e}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;display:flex;flex-direction:column}
+button,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:18px;padding:10px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:22px;font-weight:900;letter-spacing:-.02em;margin:0}header h1 a{color:inherit;text-decoration:none}header .home{margin-left:auto;font-size:13.5px;font-weight:700;color:var(--blue);text-decoration:none}
+.tabs{display:flex;gap:2px}
+.tabs a{padding:7px 14px;font-weight:700;color:var(--mut);text-decoration:none;border-bottom:3px solid transparent}
+.tabs a[aria-current=page]{color:var(--ink);border-bottom-color:var(--red)}
+.filters{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.filters label{font-size:13px;color:var(--mut);font-weight:700;margin-right:6px}
+.filters select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:0;background:#fff;padding:6px 12px;font-weight:700;cursor:pointer;color:var(--mut)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.sample{background:#fff4f4;color:var(--red);font-weight:700;font-size:13px;padding:6px 18px;border-bottom:1px solid #f3caca}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 470px;min-height:0}
+.mapbox{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:#f7f8fb}
+.legend{position:absolute;z-index:500;left:14px;bottom:14px;background:rgba(255,255,255,.95);padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px}
+.legend b{display:block;font-size:12.5px;margin-bottom:4px}
+.legend .row{display:flex;align-items:center;gap:6px;line-height:1.7}
+.legend i{width:16px;height:12px;border-radius:2px;display:inline-block}
+.hover{position:absolute;z-index:600;pointer-events:none;background:rgba(23,32,58,.94);color:#fff;font-size:13px;padding:6px 10px;border-radius:8px;white-space:nowrap;display:none}
+.hover b{font-size:14px}
+aside{overflow-y:auto;border-left:1px solid var(--line);padding:16px 20px 28px}
+.where{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.where h2{font-size:22px;margin:0;font-weight:900}
+.where button{border:0;background:none;color:var(--blue);font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+.period{color:var(--mut);font-size:13px;margin:2px 0 12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.stats div{padding:10px 10px 10px 0}
+.stats div+div{padding-left:12px;border-left:1px solid var(--line)}
+.stats small{display:block;color:var(--mut);font-size:12.5px;font-weight:700}
+.stats b{display:block;font-size:21px;white-space:nowrap;font-weight:900;letter-spacing:-.02em;line-height:1.25;margin-top:2px}
+.stats span{font-size:12.5px;color:var(--mut)}
+.up{color:var(--red)!important}.dn{color:var(--blue)!important}
+h3{font-size:15.5px;margin:22px 0 6px;display:flex;justify-content:space-between;align-items:baseline}
+h3 small{font-weight:400;color:var(--mut);font-size:12.5px}
+#chart{width:100%;height:150px;display:block}
+#chart rect.b{fill:#b6c3dc}#chart rect.b.on{fill:var(--q4)}#chart rect.hit{fill:transparent;cursor:pointer}
+#chart text{font-size:11px;fill:var(--mut)}
+#chart line{stroke:var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:12px;color:var(--mut);font-weight:700;text-align:left;border-bottom:1px solid var(--ink);padding:5px 4px}
+td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+td.r,th.r{text-align:right;white-space:nowrap}
+td .s{display:block;color:var(--mut);font-size:12px}
+.rank td:first-child{color:var(--mut);width:28px}
+.rank tr{cursor:pointer}.rank tr:hover td{background:var(--panel)}
+.foot{color:var(--mut);font-size:12px;margin-top:18px;line-height:1.6}
+.leaflet-container{font:inherit}
+.leaflet-interactive:focus{outline:none}
+@media (max-width:860px){
+  body{display:block;height:auto}html{height:auto}main{display:block!important;overflow:visible!important}.mapbox{height:52vh;min-height:0!important}
+  main{grid-template-columns:1fr;grid-template-rows:52vh auto;overflow-y:auto}
+  aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .mapbox{min-height:52vh}
+  .stats b{font-size:18px}
+  header{padding:8px 12px}.filters{padding:8px 12px;gap:10px}
+  .legend{font-size:11px;padding:5px 7px;left:8px;bottom:8px}.legend b{font-size:11px}.legend .row{line-height:1.45}.legend i{width:12px;height:9px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="./" title="내땅 보이소 처음 화면으로">내땅 보이소</a></h1>
+  <nav class="tabs" aria-label="화면 고르기"><a href="apt.html" aria-current="page">아파트 거래</a><a href="tour.html">가볼 만한 곳</a></nav><a class="home" href="./">← 내 땅 찾기로</a>
+</header>
+<div class="filters">
+  <span><label for="fSido">지역</label><select id="fSido"><option value="">전국</option></select></span>
+  <span><label>기간</label><span class="seg" id="fPer"><button data-v="3">3개월</button><button data-v="6">6개월</button><button data-v="12" aria-pressed="true">1년</button></span></span>
+  <span><label>지도 색</label><span class="seg" id="fMet"><button data-v="c" aria-pressed="true">거래량</button><button data-v="m">평당 가격</button></span></span>
+</div>
+<div class="sample" id="sampleBar" hidden>예시 데이터로 만든 화면이에요. 실제 거래 자료가 다 모이면 자동으로 바뀌어요.</div>
+<main>
+  <div class="mapbox"><div id="map" role="img" aria-label="시군구별 아파트 거래 지도"></div><div class="legend" id="legend"></div><div class="hover" id="hover"></div></div>
+  <aside>
+    <div class="where"><h2 id="wName">전국</h2><button id="wBack" hidden>← 전체로</button></div>
+    <div class="period" id="wPer"></div>
+    <div class="stats">
+      <div><small>거래</small><b id="sCnt">-</b><span id="sCntD"></span></div>
+      <div><small>평당 중위가격</small><b id="sMed">-</b><span id="sMedD"></span></div>
+      <div><small>최고 거래가</small><b id="sMax">-</b><span id="sMaxN"></span></div>
+    </div>
+    <h3>월별 거래량 <small>최근 3년 · 진한 막대가 고른 기간</small></h3>
+    <svg id="chart" role="img" aria-label="월별 거래량 막대그래프"></svg>
+    <h3 id="rkT">거래 많은 곳</h3>
+    <table class="rank"><tbody id="rk"></tbody></table>
+    <h3>가장 비싼 거래 <small>최근 1년</small></h3>
+    <table><thead><tr><th>단지</th><th>전용</th><th class="r">금액</th></tr></thead><tbody id="hi"></tbody></table>
+    <h3>최근 거래</h3>
+    <table><thead><tr><th>계약일</th><th>단지</th><th>전용·층</th><th class="r">금액</th></tr></thead><tbody id="rc"></tbody></table>
+    <div class="foot" id="foot">국토교통부 아파트 매매 실거래가 공개 자료 · 해제된 거래 제외 · 평당 = 3.3㎡ 기준 · 참고용</div>
+  </aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(async()=>{
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PY=3.3058,eok=v=>{v=Math.round(v);const e=Math.floor(v/10000),m=v%10000;return (e?e+'억':'')+(m?(e?' ':'')+m.toLocaleString()+'만':'')+'원'};
+const day=d=>d&&d.length>=8?`${d.slice(2,4)}.${d.slice(4,6)}.${d.slice(6,8)}`:'';
+const get=u=>fetch(u).then(r=>r.ok?r.json():null).catch(()=>null);
+let [D,G]=await Promise.all([get('data/apt/summary.json'),get('data/sgg.geojson')]);
+if(!D||!D.sgg||!Object.keys(D.sgg).length){D=await get('data/apt_sample.json');$('sampleBar').hidden=false}
+if(!D||!G){$('wName').textContent='자료를 불러오지 못했어요';return}
+const M=D.months,NM=M.length,feats=G.features,geoCodes=new Set(feats.map(f=>f.properties.c));
+// 지도 한 칸(시군구)에 들어갈 자료 코드 : 같은 코드 + (구가 새로 생긴 시) 같은 앞 4자리 코드
+const keysOf={};for(const f of feats){const c=f.properties.c;keysOf[c]=Object.keys(D.sgg).filter(k=>k===c||(c[4]==='0'&&k.slice(0,4)===c.slice(0,4)&&!geoCodes.has(k)))}
+const S={sido:'',per:12,met:'c',sel:null};
+const SIDO=[...new Set(feats.map(f=>f.properties.s))];
+const ORDER=['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+SIDO.sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b)).forEach(s=>$('fSido').insertAdjacentHTML('beforeend',`<option>${s}</option>`));
+// 여러 시군구를 합친 요약 (평당 중위가격은 월별 중위값을 거래량으로 가중 평균한 근사값)
+function agg(codes,per){const keys=codes.flatMap(c=>keysOf[c]||[]),c=new Array(NM).fill(0),w=new Array(NM).fill(0);let hi=[],rc=[];
+  for(const k of keys){const d=D.sgg[k];if(!d)continue;d.c.forEach((v,i)=>{c[i]+=v;w[i]+=v*(d.m[i]||0)});hi=hi.concat(d.hi.map(x=>({...x,k})));rc=rc.concat(d.r.map(x=>({...x,k})))}
+  const m=c.map((v,i)=>v?w[i]/v:0),sl=(a,from,to)=>a.slice(from,to);
+  const cur=sl(c,NM-per,NM).reduce((a,b)=>a+b,0),prev=sl(c,NM-12-per,NM-12).reduce((a,b)=>a+b,0);
+  const wm=(f,t)=>{let s=0,n=0;for(let i=f;i<t;i++){s+=m[i]*c[i];n+=c[i]}return n?s/n:0};
+  return{c,m,cnt:cur,cntPrev:prev,med:wm(NM-per,NM),medPrev:wm(NM-12-per,NM-12),hi:hi.sort((a,b)=>b.p-a.p).slice(0,5),rc:rc.sort((a,b)=>String(b.d).localeCompare(String(a.d))).slice(0,8)}}
+const nameOf={};feats.forEach(f=>nameOf[f.properties.c]=f.properties.s+' '+f.properties.n);
+const kName=k=>{const f=feats.find(f=>(keysOf[f.properties.c]||[]).includes(k));return f?f.properties.n:k};
+// 지도
+const map=L.map('map',{zoomControl:true,attributionControl:false,zoomSnap:.25,minZoom:6,maxZoom:11}).setView([36.2,127.8],7);
+let val={},breaks=[];
+const colorOf=v=>{if(!v)return 'var(--q0)';let i=0;while(i<breaks.length&&v>breaks[i])i++;return `var(--q${i+1})`};
+const layer=L.geoJSON(G,{style:()=>({weight:.6,color:'#fff',fillOpacity:1}),onEachFeature:(f,l)=>{
+  l.on('mousemove',e=>{const p=f.properties,v=val[p.c],h=$('hover');h.style.display='block';const pt=e.containerPoint;h.style.left=(pt.x+14)+'px';h.style.top=(pt.y+10)+'px';
+    h.innerHTML=`<b>${esc(p.s)} ${esc(p.n)}</b><br>${S.met==='c'?`거래 ${(v||0).toLocaleString()}건`:(v?`평당 ${Math.round(v).toLocaleString()}만원`:'거래 없음')}`;l.setStyle({weight:2,color:'#17203a'});l.bringToFront()});
+  l.on('mouseout',()=>{$('hover').style.display='none';l.setStyle({weight:S.sel===f.properties.c?2.5:.6,color:S.sel===f.properties.c?'#d7262b':'#fff'})});
+  l.on('click',()=>{S.sel=S.sel===f.properties.c?null:f.properties.c;draw()})}}).addTo(map);
+function inSido(f){return !S.sido||f.properties.s===S.sido}
+function draw(){
+  const vis=feats.filter(inSido),codes=vis.map(f=>f.properties.c);
+  // 지도 색 : 칸마다 값 → 5단계 (분위수)
+  val={};for(const c of codes){const a=agg([c],S.per);val[c]=S.met==='c'?a.cnt:a.med*PY}
+  const vs=Object.values(val).filter(v=>v>0).sort((a,b)=>a-b),q=p=>vs[Math.min(vs.length-1,Math.floor(p*vs.length))];
+  breaks=vs.length?[q(.2),q(.4),q(.6),q(.8)]:[];
+  layer.eachLayer(l=>{const f=l.feature,c=f.properties.c,on=inSido(f);l.setStyle({fillColor:on?colorOf(val[c]):'#f1f2f5',fillOpacity:on?1:.5,weight:S.sel===c?2.5:.6,color:S.sel===c?'#d7262b':'#fff'});if(S.sel===c)l.bringToFront()});
+  const fmt=v=>S.met==='c'?Math.round(v).toLocaleString()+'건':Math.round(v).toLocaleString()+'만원';
+  const lo=[vs[0]||0,...breaks],hi2=[...breaks,vs[vs.length-1]||0];
+  $('legend').innerHTML=`<b>${S.met==='c'?`거래량 (${S.per===12?'1년':S.per+'개월'})`:'평당 중위가격'}</b>`+lo.map((v,i)=>`<div class="row"><i style="background:var(--q${i+1})"></i>${fmt(v)} ~ ${fmt(hi2[i])}</div>`).join('')+`<div class="row"><i style="background:var(--q0)"></i>거래 없음</div>`;
+  // 오른쪽 요약
+  const target=S.sel?[S.sel]:codes,a=agg(target,S.per);
+  $('wName').textContent=S.sel?nameOf[S.sel]:(S.sido||'전국');$('wBack').hidden=!S.sel;
+  const ym=s=>`${s.slice(0,4)}.${s.slice(4)}`;$('wPer').textContent=`${ym(M[NM-S.per])} ~ ${ym(M[NM-1])} 계약 · ${D.sample?'예시 데이터':esc(D.updated)+' 기준'}`;
+  const pct=(x,y)=>y?((x-y)/y*100):null,tag=p=>p==null?'':`<span class="${p>0?'up':p<0?'dn':''}">작년보다 ${p>0?'+':''}${p.toFixed(1)}%</span>`;
+  $('sCnt').textContent=a.cnt.toLocaleString()+'건';$('sCntD').innerHTML=tag(pct(a.cnt,a.cntPrev));
+  $('sMed').textContent=a.med?Math.round(a.med*PY).toLocaleString()+'만원':'-';$('sMedD').innerHTML=a.med?tag(pct(a.med,a.medPrev)):'';
+  const top=a.hi[0];$('sMax').textContent=top?(top.p>=10000?(top.p/10000).toFixed(1).replace(/\.0$/,'')+'억':top.p.toLocaleString()+'만')+'원':'-';$('sMaxN').textContent=top?`${top.n} ${Math.round(top.a)}㎡`:'';$('sMax').title=top?eok(top.p):'';
+  chart(a);
+  // 순위 (지역 전체일 때) : 지도 색과 같은 기준
+  const rk=Object.entries(val).filter(([c,v])=>v>0).sort((x,y)=>y[1]-x[1]).slice(0,8);
+  $('rkT').firstChild.textContent=S.met==='c'?'거래 많은 곳':'평당 가격 높은 곳';
+  $('rk').innerHTML=rk.map(([c,v],i)=>`<tr data-c="${c}"><td>${i+1}</td><td>${esc(nameOf[c])}</td><td class="r"><b>${fmt(v)}</b></td></tr>`).join('')||'<tr><td>거래가 없어요</td></tr>';
+  const many=!S.sel;
+  $('hi').innerHTML=a.hi.map(x=>`<tr><td>${esc(x.n)}<span class="s">${many?esc(kName(x.k))+' ':''}${esc(x.umd||'')} · ${day(x.d)} · ${esc(x.f)}층</span></td><td>${Math.round(x.a)}㎡</td><td class="r"><b>${eok(x.p)}</b></td></tr>`).join('')||'<tr><td colspan="3">거래가 없어요</td></tr>';
+  $('rc').innerHTML=a.rc.map(x=>`<tr><td>${day(x.d)}</td><td>${esc(x.n)}<span class="s">${many?esc(kName(x.k))+' ':''}${esc(x.umd||'')}</span></td><td>${Math.round(x.a)}㎡ · ${esc(x.f)}층</td><td class="r">${eok(x.p)}</td></tr>`).join('')||'<tr><td colspan="4">거래가 없어요</td></tr>';
+}
+function chart(a){const sv=$('chart'),W=sv.clientWidth||420,H=150,pl=42,pb=20,pt=8,bw=(W-pl)/NM,mx=Math.max(1,...a.c);
+  const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p},top=nice(mx),y=v=>H-pb-(H-pb-pt)*v/top;
+  let s=`<line x1="${pl}" x2="${W}" y1="${y(0)}" y2="${y(0)}"/><line x1="${pl}" x2="${W}" y1="${y(top)}" y2="${y(top)}" stroke-dasharray="2 3"/>`+
+    `<text x="${pl-4}" y="${y(top)+4}" text-anchor="end">${top>=10000?(top/10000)+'만':top.toLocaleString()}</text><text x="${pl-4}" y="${y(0)}" text-anchor="end">0</text>`;
+  a.c.forEach((v,i)=>{const x=pl+i*bw+1,h=y(0)-y(v),on=i>=NM-S.per;
+    s+=`<rect class="b${on?' on':''}" x="${x}" y="${y(v)}" width="${Math.max(1,bw-2)}" height="${Math.max(0,h)}" rx="${Math.min(2,bw/3)}"/>`;
+    if(M[i].endsWith('01'))s+=`<text x="${x}" y="${H-5}">${M[i].slice(0,4)}</text>`;
+    s+=`<rect class="hit" x="${pl+i*bw}" y="0" width="${bw}" height="${H-pb}" data-i="${i}"/>`});
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`);sv.innerHTML=s;
+  sv.onmousemove=e=>{const i=e.target.dataset&&e.target.dataset.i;const h=$('hover');if(i==null){h.style.display='none';return}
+    const r=sv.getBoundingClientRect();h.style.display='block';h.style.position='fixed';h.style.left=(e.clientX+12)+'px';h.style.top=(e.clientY-36)+'px';
+    h.innerHTML=`<b>${M[i].slice(0,4)}.${M[i].slice(4)}</b> 거래 ${a.c[i].toLocaleString()}건${a.m[i]?` · 평당 ${Math.round(a.m[i]*PY).toLocaleString()}만원`:''}`};
+  sv.onmouseleave=()=>{const h=$('hover');h.style.display='none';h.style.position='absolute'}}
+function fit(){const b=L.latLngBounds([]);layer.eachLayer(l=>{if(inSido(l.feature))b.extend(l.getBounds())});if(b.isValid())map.fitBounds(b,{padding:[16,16]})}
+$('fSido').onchange=e=>{S.sido=e.target.value;S.sel=null;draw();fit()};
+for(const [id,key] of [['fPer','per'],['fMet','met']])$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  [...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x===b));S[key]=key==='per'?+b.dataset.v:b.dataset.v;draw()};
+$('wBack').onclick=()=>{S.sel=null;draw()};
+$('rk').onclick=e=>{const tr=e.target.closest('tr[data-c]');if(!tr)return;S.sel=tr.dataset.c;draw()};
+addEventListener('resize',()=>{chart(agg(S.sel?[S.sel]:feats.filter(inSido).map(f=>f.properties.c),S.per))});
+draw();fit();
+})();
+</script>
+</body>
+</html>

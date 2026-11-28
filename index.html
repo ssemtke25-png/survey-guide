@@ -39,6 +39,7 @@ button,input{font:inherit}
 h1{font-size:28px;font-weight:900;letter-spacing:-.02em;margin:0}
 .sub{color:var(--mut);font-size:14px;margin:2px 0 14px}
 h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;color:var(--mut);margin-left:4px}.infobox{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}.infobox .addr{font-weight:900;font-size:18px}.infobox .meta{color:var(--mut);font-size:14px}
+.tour .tr{display:flex;gap:10px;padding:8px 0;border-top:1px dashed var(--line);align-items:flex-start}.tour .tr:first-of-type{border-top:0}.tour .tl{display:flex;gap:12px;margin-top:2px}.tour .tl a{font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none}.tour img,.tour .ni{width:64px;height:48px;object-fit:cover;border-radius:6px;flex:none;background:var(--panel)}.tour .tt{font-size:13.5px;line-height:1.45}.tour .tt small{color:var(--mut);font-size:12px}.tour .to{display:block;color:var(--mut);font-size:12.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .kinds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .kinds button{text-align:left;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;min-height:64px}
 .kinds b{display:block;font-size:14.5px;line-height:1.35}
@@ -95,7 +96,7 @@ h2{font-size:17px;margin:18px 0 8px}h2 small{font-size:13px;font-weight:400;colo
 .gbub{position:fixed;z-index:4000;background:#17203a;color:#fff;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.25)}.gbub b{display:block;color:#ffd84d;margin-bottom:2px}
 .qrpop{position:absolute;z-index:2500;right:18px;top:64px;width:230px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;font-size:13px}.qrpop[hidden]{display:none}.qrpop #qrImg{width:180px;height:180px;margin:0 auto 8px}.qrpop #qrImg svg,.qrpop #qrImg img{width:180px;height:180px;display:block}.qrpop b{display:block;font-size:14px}.qrpop span{display:block;color:var(--mut);font-size:12px;margin-top:3px;word-break:keep-all}.qrpop #qrX{position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;color:var(--mut);cursor:pointer}
 @media(max-width:860px){#bQR{display:none!important}}
-.toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.tbtn{display:flex;gap:6px;flex-wrap:wrap}.tbtn button{border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.tbtn b{font-size:16px}.tbtn button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.tbtn{display:flex;gap:6px;flex-wrap:wrap}.tbtn button{border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.tbtn .tlink{border:1.5px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center}.tbtn b{font-size:16px}.tbtn button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .bigtext .side{zoom:1.2}.bigtext .gbub{font-size:16px}
 .parts small{color:var(--mut);font-size:11px}
 .splab small{font-weight:400;color:var(--mut)}
@@ -196,7 +197,7 @@ tr.sum td{font-weight:900}
   </div>
   <div class="side" id="side">
     <div class="sheethd" id="sheetHd"><div class="grab"></div><div class="shrow"><b id="shTitle">지도에서 내 땅을 콕 눌러 보세요</b><span id="shFee"></span></div></div>
-    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button><button type="button" id="bQR" title="휴대폰으로 이어 보기">📱 휴대폰으로</button></div></div>
+    <div class="toprow"><h1>내땅 보이소</h1><div class="tbtn"><button type="button" id="bBig" aria-pressed="false">가<b>가</b> 큰 글씨</button><button type="button" id="bInst" hidden>📲 홈 화면에 추가</button><button type="button" id="bQR" title="휴대폰으로 이어 보기">📱 휴대폰으로</button><a class="tlink" href="apt.html">🏢 아파트 거래</a><a class="tlink" id="tlTour" href="tour.html">🧭 가볼 만한 곳</a></div></div>
     <div class="qrpop" id="qrPop" hidden><div id="qrImg"></div><b id="qrT">휴대폰 카메라로 찍어 보세요</b><span id="qrS"></span><button type="button" id="qrX" aria-label="닫기">✕</button></div>
     <p class="sub">지도에서 내 땅을 콕 누르면 공시지가·용도지역부터 측량 수수료, 신청하는 곳까지 알려 드려요.</p>
     <div class="warn"><b>지도의 선은 참고용이에요 <button type="button" class="qm" data-g="cad" aria-label="연속지적도 설명">?</button></b>지도에 보이는 선은 연속지적도로, 법적 효력이 있는 지적도가 아니에요. 실제 경계는 지적측량을 해야 정확히 알 수 있어요.</div>
@@ -328,6 +329,19 @@ function lcHTML(c){const it=(k,v,warn)=>v?`<div><span>${k}</span><b${warn?' styl
 // ---------- 아파트 실거래가 (GitHub Actions가 매달 모아 둔 data/apt/시군구.json) — 공개 (끄려면 ?apt=0)
 const APT_ON=!/[?&]apt=0/.test(location.search),APT_CACHE={};
 const eok=m=>{m=+m;const e=Math.floor(m/10000),r=m%10000;return (e?e+'억':'')+(r?(e?' ':'')+r.toLocaleString()+'만':'')+'원'};
+// 근처 가볼 만한 곳 : 한국관광공사 관광정보를 0.1도 칸 파일로 나눠 둔 것(data/tour/g)에서 주변 칸만 읽음
+const TOUR_TY={'12':'관광지','14':'문화시설','28':'레포츠'},TOUR_C={};
+const tourGet=k=>TOUR_C[k]||(TOUR_C[k]=fetch(`data/tour/g/${k}.json`).then(r=>r.ok?r.json():[]).catch(()=>[]));
+async function tourInfo(p){if(!p||!p.center)return;const [la,lo]=p.center,ks=[];
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)ks.push(`${Math.floor(la*10)+i}_${Math.floor(lo*10)+j}`);
+  const all=(await Promise.all(ks.map(tourGet))).flat(),R=6371,rad=Math.PI/180;
+  const km=(y,x)=>{const dy=(y-la)*rad,dx=(x-lo)*rad*Math.cos(la*rad);return R*Math.sqrt(dx*dx+dy*dy)};
+  p.tour=all.map(r=>({id:r[0],t:r[1],ty:r[2],x:r[3],y:r[4],img:r[5],a:r[6],o:r[7],hp:/^https?:\/\//.test(r[8]||'')?r[8]:'',d:km(r[4],r[3])})).filter(r=>r.d<=12)
+    .sort((a,b)=>(a.d-(a.img?1.5:0)-(a.o?1:0))-(b.d-(b.img?1.5:0)-(b.o?1:0))).slice(0,5).sort((a,b)=>a.d-b.d)}
+function tourHTML(T){const dk=d=>d<1?Math.round(d*1000)+'m':d.toFixed(1)+'km';
+  return `<div class="hist tour"><div class="hh2"><b>근처 가볼 만한 곳</b><span class="hint">한국관광공사 관광정보</span></div>`+T.map(r=>{const km=`https://map.kakao.com/link/map/${encodeURIComponent(r.t)},${r.y},${r.x}`;
+    return `<div class="tr">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b> <small>${esc(TOUR_TY[r.ty]||'')} · ${dk(r.d)}</small>${r.o?`<span class="to">${esc(r.o)}</span>`:''}<span class="tl">${r.hp?`<a href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}<a href="${km}" target="_blank" rel="noopener">지도 →</a></span></span></div>`}).join('')+
+    `<div class="hint" style="margin-top:4px">거리는 이 땅에서 잰 직선거리예요</div></div>`}
 // 실거래 자료 : data/apt/{시군구}/{읍면동}.json (전국). 예전 경북 한 파일(data/apt/{시군구}.json)도 읽음
 const aptGet=u=>APT_CACHE[u]||(APT_CACHE[u]=fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));
 async function aptInfo(p){if(!APT_ON||!p.pnu)return;if(p.pnu[10]==='2')return;const sgg=p.pnu.slice(0,5),umd=p.pnu.slice(5,10);
@@ -365,9 +379,10 @@ async function extraInfo(p){const log=PROBE?[]:null;
   if(lc){const o=lc.slice().sort((a,b)=>String(pickF(b,[/stdrYear/i])).localeCompare(String(pickF(a,[/stdrYear/i]))))[0];
     p.lc={year:String(pickF(o,[/stdrYear/i])||''),use:String(pickF(o,[/ladUseSittn.*Nm$/i,/UseSittn.*Nm$/i])||''),hg:String(pickF(o,[/tpgrphHg.*Nm$/i])||''),
       frm:String(pickF(o,[/tpgrphFrm.*Nm$/i])||''),road:String(pickF(o,[/roadSide.*Nm$/i])||'')};if(!(p.lc.use||p.hg||p.lc.road||p.lc.hg))p.lc=null}
-  if(b)p.bld=b.map(o=>({name:String(pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i])||'').replace(/^.*대장$/,'').trim(),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
+  // 아파트처럼 같은 이름이 여러 동이면 동 이름(101동)을 붙이고 동 순서로 정렬 ('주1'·'부1' 같은 건 안 붙임)
+  if(b)p.bld=b.map(o=>({name:(String(pickF(o,[/^(buld|bldg|bld)Nm$/i,/(buld|bldg|bld).*Nm$/i])||'').replace(/^.*대장$/,'').trim()+(/동$/.test(String(o.buldDongNm||'').trim())?' '+String(o.buldDongNm).trim():'')).trim(),use:pickF(o,[/mainPrpos.*Nm$/i,/(prpos|purps).*Nm$/i]),
     year:ymd(pickF(o,[/useConfm.*De$/i,/useApr.*/i,/confm.*De$/i,/^useYmd/i])),area:+pickF(o,[/^totar$/i,/tot.*Ar(ea)?$/i])||0,
-    fl:pickF(o,[/^(grnd|ground).*(flr|floor)/i,/grndFlrCnt/i]),ufl:pickF(o,[/^(ugrnd|under).*(flr|floor)/i]),str:pickF(o,[/strct.*Nm$/i])})).filter(x=>x.name||x.use||x.year||x.area);
+    fl:pickF(o,[/^(grnd|ground).*(flr|floor)/i,/grndFlrCnt/i]),ufl:pickF(o,[/^(ugrnd|under).*(flr|floor)/i]),str:pickF(o,[/strct.*Nm$/i])})).filter(x=>x.name||x.use||x.year||x.area).sort((x,y)=>{const n=v=>String(v.name||'').replace(/\d+/g,d=>d.padStart(6,'0'));return n(x).localeCompare(n(y))});
   if(m){const sn=o=>+(o.ladHistSn||0)*1e9+(+o.ladMvmnHistSn||0);m=m.slice().sort((a,b)=>sn(a)-sn(b));
     // 이동일이 비어 있으면 바로 앞 이력의 말소일(= 이 상태가 시작된 날)로 채움
     m.forEach((o,i)=>{o.__d=o.ladMvmnDe||(i>0?m[i-1].ladMvmnErsrDe:'')||''})}
@@ -427,6 +442,7 @@ function infoHTML(){
     +(p&&p.lc?lcHTML(p.lc):'')
     +(p&&p.bld&&p.bld.length?bldHTML(p.bld):'')
     +(p&&p.mv&&p.mv.length?mvHTML(p.mv):'')
+    +(p&&p.tour&&p.tour.length?tourHTML(p.tour):'')
     +(p&&p.xiFail?`<div class="hint" style="margin-top:8px">건물·토지 특성·이동 연혁을 브이월드에서 못 받아 왔어요. <button type="button" class="linkb" id="xiRetry" style="text-decoration:underline;color:var(--blue);background:none;border:0;padding:0;font:inherit;cursor:pointer">다시 받아 오기</button></div>`:'')
     +(p&&p.probe?`<details class="hist" open><summary>API 점검 결과 (probe)</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:340px;overflow:auto">${esc(p.probe)}</pre></details>`:'')
     :`<div class="empty">지도에서 땅을 <b>콕</b> 누르면 지번·도로명·공시지가 추이·용도지역이 여기에 나와요.</div>`}
@@ -922,7 +938,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);{const cc=(lat&&lon)?L.latLng(lat,lon):gj.getBounds().getCenter();S.parcel.rv=[+cc.lat.toFixed(6),+cc.lng.toFixed(6)]}if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
-    ledger(S.parcel);
+    ledger(S.parcel);{const t=$('tlTour');if(t&&S.parcel.center)t.href=`tour.html#${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }

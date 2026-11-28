@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>가볼 만한 곳 - 내땅 보이소</title>
+<meta name="description" content="지도에서 관광지·문화시설·레포츠를 찾아봐요. 한국관광공사 관광정보.">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#fff;--ink:#17203a;--mut:#5b6580;--line:#d9deea;--panel:#f4f6fb;--red:#d7262b;--blue:#1f4fbf;--t12:#257de0;--t14:#f47230;--t28:#00b894}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;display:flex;flex-direction:column}
+button,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:18px;padding:10px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:22px;font-weight:900;letter-spacing:-.02em;margin:0}header h1 a{color:inherit;text-decoration:none}
+.tabs{display:flex;gap:2px}
+.tabs a{padding:7px 14px;font-weight:700;color:var(--mut);text-decoration:none;border-bottom:3px solid transparent}
+.tabs a[aria-current=page]{color:var(--ink);border-bottom-color:var(--red)}
+header .home{margin-left:auto;font-size:13.5px;font-weight:700;color:var(--blue);text-decoration:none}
+.filters{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.filters label{font-size:13px;color:var(--mut);font-weight:700;margin-right:6px}
+.filters select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:700}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-weight:700;cursor:pointer;color:var(--mut);display:inline-flex;align-items:center;gap:6px}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chip[aria-pressed=true]{color:var(--ink);border-color:var(--ink)}
+.chip[aria-pressed=false] i{opacity:.3}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0}
+.mapbox{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:#eef1f6}
+.note{position:absolute;z-index:500;left:50%;top:14px;transform:translateX(-50%);background:rgba(23,32,58,.92);color:#fff;font-size:13.5px;font-weight:700;padding:7px 14px;border-radius:999px;white-space:nowrap}
+aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
+.cnt{color:var(--mut);font-size:13px;margin:0 0 6px}
+.it{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.it:first-of-type{border-top:0}
+.it:hover b{text-decoration:underline}
+.it img,.it .ni{width:84px;height:62px;object-fit:cover;border-radius:6px;flex:none;background:var(--panel)}
+.it .tt{font-size:14px;line-height:1.45}
+.it small{color:var(--mut);font-size:12px;display:block}
+.it .o{color:var(--mut);font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.it .hp{font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.pop{width:240px;font:13.5px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;color:var(--ink)}
+.pop img{width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:6px;display:block}
+.pop b{font-size:15px}.pop small{color:var(--mut);display:block}.pop p{margin:6px 0;color:#333}
+.pop a{color:var(--blue);font-weight:700;text-decoration:none}.pop .lk{display:flex;gap:14px;flex-wrap:wrap}
+.foot{color:var(--mut);font-size:12px;margin-top:16px;line-height:1.6}
+.leaflet-container{font:inherit}
+@media (max-width:860px){
+  body{display:block;height:auto}html{height:auto}main{display:block!important;overflow:visible!important}.mapbox{height:55vh;min-height:0!important}
+  main{grid-template-columns:1fr;grid-template-rows:55vh auto;overflow-y:auto}
+  aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .mapbox{min-height:55vh}
+  header{padding:8px 12px}.filters{padding:8px 12px;gap:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="./" title="내땅 보이소 처음 화면으로">내땅 보이소</a></h1>
+  <nav class="tabs" aria-label="화면 고르기"><a href="apt.html">아파트 거래</a><a href="tour.html" aria-current="page">가볼 만한 곳</a></nav>
+  <a class="home" href="./">← 내 땅 찾기로</a>
+</header>
+<div class="filters">
+  <span><label for="fSido">지역</label><select id="fSido"></select> <select id="fSgg"><option value="">시군구 고르기</option></select></span>
+  <span id="fTy"><button class="chip" data-t="12" aria-pressed="true"><i style="background:var(--t12)"></i>관광지</button> <button class="chip" data-t="14" aria-pressed="true"><i style="background:var(--t14)"></i>문화시설</button> <button class="chip" data-t="28" aria-pressed="true"><i style="background:var(--t28)"></i>레포츠</button></span>
+</div>
+<main>
+  <div class="mapbox"><div id="map" role="application" aria-label="관광지 지도"></div><div class="note" id="note" hidden></div></div>
+  <aside>
+    <p class="cnt" id="cnt"></p>
+    <div id="list"></div>
+    <div class="foot">한국관광공사 국문 관광정보(공공누리) · 위치·소개는 관광공사 자료 기준이에요 · 누르면 지도에서 보여 주고, 카카오맵으로 길찾기를 할 수 있어요</div>
+  </aside>
+</main>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(async()=>{
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY=(window.VWORLD_KEY||'').trim(),TY={'12':'관광지','14':'문화시설','28':'레포츠'},COL={'12':'#257de0','14':'#f47230','28':'#00b894'};
+const MINZ=10,on=new Set(['12','14','28']);
+const map=L.map('map',{zoomControl:true,attributionControl:true,minZoom:7,maxZoom:18}).setView([36.5759,128.5056],11);
+if(KEY)L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Base/{z}/{y}/{x}.png`,{maxZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer',updateWhenIdle:true,keepBuffer:1}).addTo(map);
+map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('관광정보 한국관광공사');
+// 지역 고르기 : 시군구 경계 파일에서 시도·시군구 목록과 범위를 만듦
+const G=await fetch('data/sgg.geojson').then(r=>r.ok?r.json():null).catch(()=>null);const BB={},bySido={};
+const ORDER=['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+const GB=['포항시남구','포항시북구','경주시','김천시','안동시','구미시','영주시','영천시','상주시','문경시','경산시','의성군','청송군','영양군','영덕군','청도군','고령군','성주군','칠곡군','예천군','봉화군','울진군','울릉군'];
+if(G)for(const f of G.features){const p=f.properties;const b=L.geoJSON(f).getBounds();BB[p.c]=b;(bySido[p.s]=bySido[p.s]||[]).push(p)}
+const sidos=Object.keys(bySido).sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b));
+$('fSido').innerHTML=sidos.map(s=>`<option${s==='경북'?' selected':''}>${s}</option>`).join('');
+function fillSgg(){const s=$('fSido').value,L2=(bySido[s]||[]).slice();if(s==='경북')L2.sort((a,b)=>GB.indexOf(a.n)-GB.indexOf(b.n));
+  $('fSgg').innerHTML='<option value="">시군구 고르기</option>'+L2.map(p=>`<option value="${p.c}">${esc(p.n)}</option>`).join('')}
+fillSgg();
+$('fSido').onchange=()=>{fillSgg();const b=L.latLngBounds([]);(bySido[$('fSido').value]||[]).forEach(p=>b.extend(BB[p.c]));if(b.isValid())map.fitBounds(b)};
+$('fSgg').onchange=e=>{const b=BB[e.target.value];if(b)map.fitBounds(b,{maxZoom:13})};
+// 관광지 칸 파일 (0.1도) : 보이는 칸만 받음
+const C={},get=k=>C[k]||(C[k]=fetch(`data/tour/g/${k}.json`).then(r=>r.ok?r.json():[]).catch(()=>[]));
+const layer=L.layerGroup().addTo(map),mk={};let items=[],seq=0,want=null;
+function popHTML(r){return `<div class="pop">${r.img?`<img src="${esc(r.img)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<p>${esc(r.o)}</p>`:''}<div class="lk">${r.hp?`<a href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}<a href="https://map.kakao.com/link/to/${encodeURIComponent(r.t)},${r.y},${r.x}" target="_blank" rel="noopener">카카오맵 길찾기 →</a></div></div>`}
+async function load(){const z=map.getZoom(),my=++seq;
+  if(z<MINZ){layer.clearLayers();items=[];$('note').hidden=false;$('note').textContent='지도를 조금 더 확대하면 관광지가 보여요';$('cnt').textContent='위에서 시군구를 고르거나 지도를 확대해 주세요';$('list').innerHTML='';return}
+  $('note').hidden=true;const b=map.getBounds(),ks=[];
+  for(let i=Math.floor(b.getSouth()*10);i<=Math.floor(b.getNorth()*10);i++)for(let j=Math.floor(b.getWest()*10);j<=Math.floor(b.getEast()*10);j++)ks.push(`${i}_${j}`);
+  const rows=(await Promise.all(ks.slice(0,160).map(get))).flat();if(my!==seq)return;
+  const c=map.getCenter(),d2=r=>{const dy=r.y-c.lat,dx=(r.x-c.lng)*Math.cos(c.lat*Math.PI/180);return dy*dy+dx*dx};
+  items=rows.map(r=>({id:r[0],t:r[1],ty:r[2],x:r[3],y:r[4],img:r[5],a:r[6],o:r[7],hp:/^https?:\/\//.test(r[8]||'')?r[8]:''})).filter(r=>on.has(r.ty)&&b.contains([r.y,r.x])).sort((a,b)=>d2(a)-d2(b));
+  layer.clearLayers();
+  for(const k in mk)delete mk[k];
+  for(const r of items){const m=L.circleMarker([r.y,r.x],{radius:7,weight:2,color:'#fff',fillColor:COL[r.ty],fillOpacity:1}).bindPopup(()=>popHTML(r),{maxWidth:260});m.addTo(layer);mk[r.id]=m}
+  if(want&&mk[want]){mk[want].openPopup();want=null}
+  $('cnt').textContent=items.length?`이 화면에 ${items.length.toLocaleString()}곳 · 지도 가운데에서 가까운 순`:'이 화면에는 관광지 자료가 없어요';
+  $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
+$('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest('.it');if(!it)return;const m=mk[it.dataset.id];if(!m)return;want=it.dataset.id;const z=Math.max(map.getZoom(),14);if(map.getCenter().distanceTo(m.getLatLng())<1&&map.getZoom()===z){m.openPopup();want=null}else map.setView(m.getLatLng(),z)};
+$('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
+let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
+// 처음 화면 : 내 땅 화면에서 넘어오면 그 자리(#lat,lng), 아니면 경북도청 근처
+{const h=location.hash.slice(1).split(',').map(Number);if(h.length===2&&h.every(isFinite))map.setView(h,13)}
+load();
+})();
+</script>
+</body>
+</html>
