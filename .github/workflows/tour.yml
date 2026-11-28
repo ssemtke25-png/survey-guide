@@ -1,0 +1,38 @@
+name: 관광지 모으기
+on:
+  schedule:
+    - cron: '23 19 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'auto (보통) / list (목록 지금 다시 받기)'
+        default: 'auto'
+permissions:
+  contents: write
+concurrency:
+  group: tour-fetch
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 관광지 받기
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          TOUR_BUDGET: '900'
+        run: python scripts/tour_fetch.py ${{ github.event.inputs.mode || 'auto' }}
+      - name: 저장
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A data/tour
+          git diff --cached --quiet && exit 0
+          git commit -q -m "관광지 갱신 $(date +%Y-%m-%d)"
+          git pull --rebase -q
+          git push -q
