@@ -15,7 +15,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +24,7 @@ jobs:
       - name: 실거래가 받기
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-          APT_BUDGET: '9000'
+          APT_BUDGET: '6500'
         run: python scripts/apt_fetch.py ${{ github.event.inputs.months || 'auto' }}
       - name: 저장
         if: always()
