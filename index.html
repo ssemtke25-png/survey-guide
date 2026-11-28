@@ -700,7 +700,7 @@ const KEY=(window.VWORLD_KEY||'').trim(),DOMAIN=(window.VWORLD_DOMAIN||'').trim(
 window.__map=null;const map=window.__map=L.map('map',{zoomControl:false,maxZoom:21}).setView([36.4,128.3],8);
 L.control.zoom({position:'topright'}).addTo(map);
 const FAST={updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1};   // 무거운 그림(WMS: 지적선·용도지역·도시계획) : 손 뗀 뒤 한 번
-const SMOOTH={updateWhenIdle:false,updateWhenZooming:false,keepBuffer:3}; // 바탕 지도 : 끄는 동안에도 계속, 여분 넉넉히
+const SMOOTH=FAST; // 끄는 동안 받기는 잔상이 생겨서 되돌림
 const VW=Object.assign({maxZoom:21,maxNativeZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer'},SMOOTH);
 // 키가 없으면(내려받은 파일을 직접 연 경우 등) 막힌 지도 대신 안내를 띄움
 const SITE='https://ssemtke25-png.github.io/survey-guide/';
