@@ -76,6 +76,8 @@ td .s{display:block;color:var(--mut);font-size:12px}
 }
 html.embed header{display:none}html.embed .filters{padding-right:450px}
 </style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="9c8ced2a-d293-4dd0-8ed5-8567ce93b139"></script>
+<script>window.__T=(n,d)=>{try{if(window.umami)umami.track(n,d)}catch(e){}}</script>
 </head>
 <body>
 <script>if(window.self!==window.top)document.documentElement.classList.add('embed')</script>
@@ -187,7 +189,7 @@ function chart(a){const sv=$('chart'),W=sv.clientWidth||420,H=150,pl=42,pb=20,pt
     h.innerHTML=`<b>${M[i].slice(0,4)}.${M[i].slice(4)}</b> 거래 ${a.c[i].toLocaleString()}건${a.m[i]?` · 평당 ${Math.round(a.m[i]*PY).toLocaleString()}만원`:''}`};
   sv.onmouseleave=()=>{const h=$('hover');h.style.display='none';h.style.position='absolute'}}
 function fit(){const b=L.latLngBounds([]);layer.eachLayer(l=>{if(inSido(l.feature))b.extend(l.getBounds())});if(b.isValid())map.fitBounds(b,{padding:[16,16]})}
-$('fSido').onchange=e=>{S.sido=e.target.value;S.sel=null;draw();fit()};
+$('fSido').onchange=e=>{window.__T&&__T('아파트 지역',{시도:e.target.value||'전국'});S.sido=e.target.value;S.sel=null;draw();fit()};
 for(const [id,key] of [['fPer','per'],['fMet','met']])$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;
   [...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x===b));S[key]=key==='per'?+b.dataset.v:b.dataset.v;draw()};
 $('wBack').onclick=()=>{S.sel=null;draw()};

@@ -58,6 +58,8 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 }
 html.embed header{display:none}html.embed .filters{padding-right:450px}
 </style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="9c8ced2a-d293-4dd0-8ed5-8567ce93b139"></script>
+<script>window.__T=(n,d)=>{try{if(window.umami)umami.track(n,d)}catch(e){}}</script>
 </head>
 <body>
 <script>if(window.self!==window.top)document.documentElement.classList.add('embed')</script>
@@ -109,7 +111,7 @@ const C={},get=k=>C[k]||(C[k]=fetch(`data/tour/g/${k}.json`).then(r=>r.ok?r.json
 const layer=L.layerGroup().addTo(map),mk={};let items=[],seq=0,want=null;
 // 설명창은 점·사진과 따로 지도에 띄움 → 지도를 옮기거나 확대해도 그대로 있고, 다른 곳을 누르거나 X를 눌러야 바뀜/닫힘
 const POP=L.popup({maxWidth:300,minWidth:280,closeOnClick:false,autoClose:false});
-function openPop(r,photo){if(!r)return;POP.options.offset=photo?[0,-20]:[0,-4];POP.setLatLng([r.y,r.x]).setContent(popHTML(r));if(!map.hasLayer(POP))POP.openOn(map);else POP.update()}
+function openPop(r,photo){if(!r)return;window.__T&&__T('관광지 열기',{종류:TY[r.ty]||r.ty});POP.options.offset=photo?[0,-20]:[0,-4];POP.setLatLng([r.y,r.x]).setContent(popHTML(r));if(!map.hasLayer(POP))POP.openOn(map);else POP.update()}
 // 이용 안내 : 시간·쉬는 날·요금·대표 메뉴·주차·문의 (관광공사 자료에 있는 것만)
 function useHTML(r){const u=r.u||{},tel=(u.i||r.tel||'').trim(),num=(tel.match(/0\d{1,2}[-\s)]?\d{3,4}[-\s]?\d{4}/)||[''])[0].replace(/[^\d]/g,'');
   const rows=[['이용시간',u.t],['쉬는 날',u.r],[r.ty==='39'?'대표 메뉴':'요금',r.ty==='39'?u.m:u.f],['주차',u.p]].filter(x=>x[1]);
@@ -137,6 +139,7 @@ async function load(){const z=map.getZoom(),my=++seq;
   $('cnt').textContent=items.length?`이 화면에 ${items.length.toLocaleString()}곳 · 지도 가운데에서 가까운 순`:'이 화면에는 관광지 자료가 없어요';
   $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.u&&(r.u.t||r.u.r)?`<span class="uline">${r.u.t?'⏰ '+esc(r.u.t.slice(0,40)):''}${r.u.t&&r.u.r?' · ':''}${r.u.r?'쉬는 날 '+esc(r.u.r.slice(0,24)):''}</span>`:''}${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
 $('list').onclick=e=>{if(e.target.closest('a'))return;const it=e.target.closest('.it');if(!it)return;const m=mk[it.dataset.id];if(!m)return;want=it.dataset.id;const z=Math.max(map.getZoom(),14);if(map.getCenter().distanceTo(m.getLatLng())<1&&map.getZoom()===z){openPop(items.find(x=>x.id===it.dataset.id),m instanceof L.Marker);want=null}else map.setView(m.getLatLng(),z)};
+document.addEventListener('click',e=>{const a=e.target.closest('.pop a,.it a.hp');if(a&&window.__T)__T('관광 링크',{어디로:a.textContent.includes('홈페이지')?'공식 홈페이지':'카카오맵'})},true);
 $('fTy').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const t=b.dataset.t,v=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',v);v?on.add(t):on.delete(t);load()};
 let tm=0;map.on('moveend',()=>{clearTimeout(tm);tm=setTimeout(load,200)});
 // 처음 화면 : 내 땅 화면에서 넘어오면 그 자리(#lat,lng), 아니면 경북도청 근처

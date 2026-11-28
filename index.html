@@ -193,6 +193,8 @@ tr.sum td{font-weight:900}
 h2.sub2{font-size:14.5px;margin:6px 0 8px;color:var(--mut)}
 @media(min-width:861px){.side{position:relative}}
 </style>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="9c8ced2a-d293-4dd0-8ed5-8567ce93b139"></script>
+<script>window.__T=(n,d)=>{try{if(window.umami)umami.track(n,d)}catch(e){}}</script>
 </head>
 <body>
 <div class="wtabs" role="tablist" aria-label="화면 고르기"><button type="button" role="tab" data-v="land" aria-selected="true">🗺️ 내 땅</button><button type="button" role="tab" data-v="apt" aria-selected="false">🏢 아파트 거래</button><button type="button" role="tab" data-v="tour" aria-selected="false">🧭 가볼 만한 곳</button></div>
@@ -975,7 +977,7 @@ async function pick(lat,lon,pnuQ){window.__picked=1;
     window.__geom=g;S.parcel.center=[lat,lon];if(window.__searchRoad){S.parcel.road=window.__searchRoad;window.__searchRoad=''}if(window.__split)window.__split.clear();
     hl.clearLayers();const gj=L.geoJSON(g,{style:{color:'#d7262b',weight:3,fillColor:'#d7262b',fillOpacity:.15}}).addTo(hl);{const cc=(lat&&lon)?L.latLng(lat,lon):gj.getBounds().getCenter();S.parcel.rv=[+cc.lat.toFixed(6),+cc.lng.toFixed(6)]}if(pnuQ){map.fitBounds(gj.getBounds(),{maxZoom:19,padding:[60,60]});const c=gj.getBounds().getCenter();lat=c.lat;lon=c.lng;S.parcel.center=[lat,lon]}
     if(S.regionAuto)S.region=regionOf(S.parcel.addr);S.conv=0;addrTip();addHist(S.parcel,lat,lon);render();{const sd=$('side');if(sd&&innerWidth>860)sd.scrollTo({top:0,behavior:'smooth'})}
-    ledger(S.parcel);{const t=$('tlTour');if(S.parcel.center){window.__tourAt=`${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`;if(t)t.href=`tour.html#${window.__tourAt}`}}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
+    window.__T&&__T('땅 누름',{시도:(S.parcel.addr||'').split(' ')[0]});ledger(S.parcel);{const t=$('tlTour');if(S.parcel.center){window.__tourAt=`${S.parcel.center[0].toFixed(5)},${S.parcel.center[1].toFixed(5)}`;if(t)t.href=`tour.html#${window.__tourAt}`}}{const tp=S.parcel;tourInfo(tp).then(()=>{if(S.parcel===tp&&tp.tour&&tp.tour.length)render()}).catch(()=>{})}
     if(window.__setSheet&&innerWidth<=860)window.__setSheet(1);
   }catch(e){tip(e.message)}
 }
@@ -1168,6 +1170,17 @@ if(PENDING&&KEY)pick(0,0,PENDING.get('p'));
   const spy=()=>{const y=nav.getBoundingClientRect().bottom+40;let cur=ids[0];for(const id of ids){const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<=y)cur=id}
     if(side.scrollTop+side.clientHeight>=side.scrollHeight-4)cur=ids[ids.length-1];[...nav.children].forEach(a=>a.classList.toggle('on',a.dataset.s===cur))};
   side.addEventListener('scroll',spy,{passive:true});addEventListener('resize',spy)})();
+</script>
+<script>
+// 통계(나만 보는 Umami) : 어떤 기능을 쓰는지 몇 가지만 셈 (개인정보·지번은 보내지 않음)
+document.addEventListener('click',e=>{const T=window.__T;if(!T)return;const t=e.target;let b;
+  if(b=t.closest('.wtabs button[data-v]'))T('창 탭',{화면:b.textContent.trim()});
+  else if(b=t.closest('#jump a[data-s]'))T('바로가기',{덩어리:b.textContent.trim()});
+  else if(b=t.closest('#kinds button'))T('측량 고름',{종류:b.dataset.k});
+  else if(b=t.closest('#bAdd,#bShare,#bSum,#bQR'))T('버튼',{이름:b.textContent.trim()});
+  else if(b=t.closest('.tour [data-go]'))T('근처 관광지',{어디로:b.classList.contains('tmore')?'더보기':'사진·이름'});
+  else if(b=t.closest('.tour .tl a'))T('근처 관광지',{어디로:b.textContent.includes('홈페이지')?'공식 홈페이지':'카카오맵'});
+  else if(b=t.closest('.rvb'))T('로드뷰')},true);
 </script>
 </body>
 </html>
