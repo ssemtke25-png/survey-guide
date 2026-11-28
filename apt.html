@@ -65,6 +65,7 @@ td .s{display:block;color:var(--mut);font-size:12px}
 .foot{color:var(--mut);font-size:12px;margin-top:18px;line-height:1.6}
 .leaflet-container{font:inherit}
 .leaflet-interactive:focus{outline:none}
+.sgl{pointer-events:none}.sgl span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#17203a;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
 @media (max-width:860px){
   body{display:block;height:auto}html{height:auto}main{display:block!important;overflow:visible!important}.mapbox{height:52vh;min-height:0!important}
   main{grid-template-columns:1fr;grid-template-rows:52vh auto;overflow-y:auto}
@@ -148,7 +149,7 @@ const layer=L.geoJSON(G,{style:()=>({weight:.6,color:'#fff',fillOpacity:1}),onEa
   l.on('mouseout',()=>{$('hover').style.display='none';l.setStyle({weight:S.sel===f.properties.c?2.5:.6,color:S.sel===f.properties.c?'#d7262b':'#fff'})});
   l.on('click',()=>{S.sel=S.sel===f.properties.c?null:f.properties.c;draw()})}}).addTo(map);
 function inSido(f){return !S.sido||f.properties.s===S.sido}
-function draw(){
+var draw=function(){
   const vis=feats.filter(inSido),codes=vis.map(f=>f.properties.c);
   // 지도 색 : 칸마다 값 → 5단계 (분위수)
   val={};for(const c of codes){const a=agg([c],S.per);val[c]=S.met==='c'?a.cnt:a.med*PY}
@@ -174,7 +175,7 @@ function draw(){
   const many=!S.sel;
   $('hi').innerHTML=a.hi.map(x=>`<tr><td>${esc(x.n)}<span class="s">${many?esc(kName(x.k))+' ':''}${esc(x.umd||'')} · ${day(x.d)} · ${esc(x.f)}층</span></td><td>${Math.round(x.a)}㎡</td><td class="r"><b>${eok(x.p)}</b></td></tr>`).join('')||'<tr><td colspan="3">거래가 없어요</td></tr>';
   $('rc').innerHTML=a.rc.map(x=>`<tr><td>${day(x.d)}</td><td>${esc(x.n)}<span class="s">${many?esc(kName(x.k))+' ':''}${esc(x.umd||'')}</span></td><td>${Math.round(x.a)}㎡ · ${esc(x.f)}층</td><td class="r">${eok(x.p)}</td></tr>`).join('')||'<tr><td colspan="4">거래가 없어요</td></tr>';
-}
+};
 function chart(a){const sv=$('chart'),W=sv.clientWidth||420,H=150,pl=42,pb=20,pt=8,bw=(W-pl)/NM,mx=Math.max(1,...a.c);
   const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p},top=nice(mx),y=v=>H-pb-(H-pb-pt)*v/top;
   let s=`<line x1="${pl}" x2="${W}" y1="${y(0)}" y2="${y(0)}"/><line x1="${pl}" x2="${W}" y1="${y(top)}" y2="${y(top)}" stroke-dasharray="2 3"/>`+
@@ -195,7 +196,28 @@ for(const [id,key] of [['fPer','per'],['fMet','met']])$(id).onclick=e=>{const b=
 $('wBack').onclick=()=>{S.sel=null;draw()};
 $('rk').onclick=e=>{const tr=e.target.closest('tr[data-c]');if(!tr)return;S.sel=tr.dataset.c;draw()};
 addEventListener('resize',()=>{chart(agg(S.sel?[S.sel]:feats.filter(inSido).map(f=>f.properties.c),S.per))});
-draw();fit();
+// 시군구 이름 : 화면에서 칸이 충분히 클 때만 (작은 구는 확대하면 나옴)
+const NL=L.layerGroup().addTo(map);
+function names(){NL.clearLayers();const vb=map.getBounds().pad(.1);layer.eachLayer(l=>{const f=l.feature;if(!inSido(f))return;const b=l.getBounds();if(!vb.intersects(b))return;
+  const a=map.latLngToContainerPoint(b.getNorthWest()),c=map.latLngToContainerPoint(b.getSouthEast());if(Math.min(c.x-a.x,c.y-a.y)<38)return;
+  const n=f.properties.n.replace(/^(.+?시)(.+구)$/,'$2');
+  L.marker(lab(l),{interactive:false,keyboard:false,icon:L.divIcon({className:'sgl',html:`<span>${esc(n)}</span>`,iconSize:null})}).addTo(NL)})}
+// 이름 자리 : 경계 안쪽 점 (가운데가 밖이면 가장 넓은 가로줄의 가운데)
+function lab(l){const b=l.getBounds(),c=b.getCenter();if(inPoly(c,l.feature.geometry))return c;
+  let best=c,bw=0;for(let k=1;k<10;k++){const y=b.getSouth()+(b.getNorth()-b.getSouth())*k/10,xs=[];
+    const rings=(l.feature.geometry.type==='Polygon'?[l.feature.geometry.coordinates]:l.feature.geometry.coordinates).flatMap(p=>p);
+    for(const r of rings)for(let i=0,j=r.length-1;i<r.length;j=i++){const[x1,y1]=r[i],[x2,y2]=r[j];if((y1>y)!==(y2>y))xs.push(x1+(y-y1)*(x2-x1)/(y2-y1))}
+    xs.sort((p,q)=>p-q);for(let i=0;i+1<xs.length;i+=2){const w=xs[i+1]-xs[i];if(w>bw){bw=w;best=L.latLng(y,(xs[i]+xs[i+1])/2)}}}return best}
+function inPoly(ll,g){const pt=[ll.lng,ll.lat];let inside=false;for(const poly of (g.type==='Polygon'?[g.coordinates]:g.coordinates))for(const r of poly)
+  for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>pt[1])!==(yj>pt[1])&&pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)inside=!inside}return inside}
+map.on('zoomend moveend',names);
+const _draw=draw;draw=function(){_draw();names()};
+// 다른 탭에서 넘어올 때 : 주소 뒤 #위도,경도 → 그 자리 시군구를 골라 보여 줌
+function goHash(){const p=decodeURIComponent(location.hash.slice(1)).split(',').map(Number);if(p.length<2||!p.every(isFinite))return false;const ll=L.latLng(p[0],p[1]);let hit=null;
+  layer.eachLayer(l=>{if(!hit&&l.getBounds().contains(ll)&&inPoly(ll,l.feature.geometry))hit=l});if(!hit)return false;
+  const f=hit.feature.properties;S.sido=f.s;$('fSido').value=f.s;S.sel=f.c;draw();map.fitBounds(hit.getBounds().pad(.6),{maxZoom:10});return true}
+addEventListener('hashchange',goHash);
+if(!goHash()){draw();fit()}
 })();
 </script>
 </body>

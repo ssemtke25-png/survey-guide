@@ -327,7 +327,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const won=n=>n.toLocaleString('ko-KR')+'원';
 // 상태 : 예시 값으로 시작 (지도에서 땅을 누르면 바뀜)
 const DEF={kind:'bound',land:'토지',area:450,price:85000,cnt:2,indiv:true,red:'none',desig:0,parcel:null,parts:[],partsEdited:false,st:'area',qty:1,bld:false,bparts:[],region:'군',regionAuto:true,conv:0};
-const S=Object.assign({},DEF);
+const S=Object.assign({},DEF);window.S_parcel=()=>S.parcel;
 const REDS=[['none','해당 없음',0],['merit','국가유공자·장애인 본인 땅',.3],['dis','자연재해 피해 복구',.5]];
 // 어려운 말 풀이
 const GLOSS={
@@ -1153,7 +1153,14 @@ if(PENDING&&KEY)pick(0,0,PENDING.get('p'));
 <script>
 // 창 탭 : 아파트 거래·가볼 만한 곳은 처음 누를 때 한 번만 불러오고, 그 뒤로는 숨겼다 보였다만 함
 (()=>{const bar=document.querySelector('.wtabs');if(!bar)return;const F={apt:document.getElementById('vApt'),tour:document.getElementById('vTour')};
-  const show=v=>{[...bar.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+  let last='land';
+  // 아파트 거래로 갈 때 볼 자리 : 가볼 만한 곳에서 왔으면 그 지도 가운데, 아니면 고른 땅(없으면 지도 가운데)
+  const here=()=>{try{if(last==='tour'&&F.tour.contentWindow.__tourMap){const c=F.tour.contentWindow.__tourMap.getCenter();return `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}}catch(e){}
+    const p=window.S_parcel&&window.S_parcel();if(p&&p.center)return `${p.center[0].toFixed(5)},${p.center[1].toFixed(5)}`;
+    if(window.__map){const c=window.__map.getCenter();return `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}return ''};
+  const show=v=>{if(v==='apt'){const at=here();if(at){if(!F.apt.src)F.apt.src=`apt.html#${at}`;else if(F.apt.dataset.at!==at){try{F.apt.contentWindow.location.hash=at}catch(e){}}F.apt.dataset.at=at}}
+    if(v==='tour'&&last!=='tour'&&!window.__tourAt&&window.__map){const c=window.__map.getCenter();if(window.__map.getZoom()>=12)window.__tourAt=`${c.lat.toFixed(5)},${c.lng.toFixed(5)}`}
+    last=v;[...bar.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
     for(const k in F){const f=F[k];if(k===v){if(!f.src){f.src=k==='tour'&&window.__tourAt?`tour.html#${window.__tourAt}`:`${k}.html`;f.dataset.at=window.__tourAt||''}
       else if(k==='tour'&&window.__tourAt&&f.dataset.at!==window.__tourAt){try{f.contentWindow.location.hash=window.__tourAt}catch(e){}f.dataset.at=window.__tourAt}f.hidden=false}else f.hidden=true}
     if(v==='land'&&window.__map)setTimeout(()=>window.__map.invalidateSize(),0)};

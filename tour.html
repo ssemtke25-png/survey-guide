@@ -93,7 +93,7 @@ const SAT=KEY?L.layerGroup([L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${
 {const c=L.control({position:'topright'});c.onAdd=()=>{const d=L.DomUtil.create('div','bm');d.innerHTML='<button type="button" data-m="b" aria-pressed="true">일반</button><button type="button" data-m="s" aria-pressed="false">위성</button>';
   L.DomEvent.disableClickPropagation(d);d.onclick=e=>{const b=e.target.closest('button');if(!b||!KEY)return;const sat=b.dataset.m==='s';
     if(sat){map.removeLayer(BASE);SAT.addTo(map)}else{map.removeLayer(SAT);BASE.addTo(map)}[...d.children].forEach(x=>x.setAttribute('aria-pressed',x===b))};return d};c.addTo(map)}
-map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('관광정보 한국관광공사');
+window.__tourMap=map;map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('관광정보 한국관광공사');
 // 지역 고르기 : 시군구 경계 파일에서 시도·시군구 목록과 범위를 만듦
 const G=await fetch('data/sgg.geojson').then(r=>r.ok?r.json():null).catch(()=>null);const BB={},bySido={};
 const ORDER=['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
