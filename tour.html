@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
-:root{--bg:#fff;--ink:#17203a;--mut:#5b6580;--line:#d9deea;--panel:#f4f6fb;--red:#d7262b;--blue:#1f4fbf;--t12:#257de0;--t14:#f47230;--t28:#00b894}
+:root{--bg:#fff;--ink:#17203a;--mut:#5b6580;--line:#d9deea;--panel:#f4f6fb;--red:#d7262b;--blue:#1f4fbf;--t12:#257de0;--t14:#f47230;--t28:#00b894;--t39:#f2a600}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans KR","Malgun Gothic",sans-serif;display:flex;flex-direction:column}
@@ -46,6 +46,7 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 .pop b{font-size:15px}.pop small{color:var(--mut);display:block}.pop p{margin:6px 0;color:#333}
 .pop a{color:var(--blue);font-weight:700;text-decoration:none}.pop .lk{display:flex;gap:14px;flex-wrap:wrap}
 .foot{color:var(--mut);font-size:12px;margin-top:16px;line-height:1.6}
+.ph img{width:46px;height:46px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);background:#fff;display:block;transition:transform .12s}.ph:hover img{transform:scale(1.5)}.ph.nf img{visibility:hidden}.ph span{position:absolute;left:50%;top:48px;transform:translateX(-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#17203a;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
 .leaflet-container{font:inherit}
 @media (max-width:860px){
   body{display:block;height:auto}html{height:auto}main{display:block!important;overflow:visible!important}.mapbox{height:55vh;min-height:0!important}
@@ -64,14 +65,14 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 </header>
 <div class="filters">
   <span><label for="fSido">지역</label><select id="fSido"></select> <select id="fSgg"><option value="">시군구 고르기</option></select></span>
-  <span id="fTy"><button class="chip" data-t="12" aria-pressed="true"><i style="background:var(--t12)"></i>관광지</button> <button class="chip" data-t="14" aria-pressed="true"><i style="background:var(--t14)"></i>문화시설</button> <button class="chip" data-t="28" aria-pressed="true"><i style="background:var(--t28)"></i>레포츠</button></span>
+  <span id="fTy"><button class="chip" data-t="12" aria-pressed="true"><i style="background:var(--t12)"></i>관광지</button> <button class="chip" data-t="14" aria-pressed="true"><i style="background:var(--t14)"></i>문화시설</button> <button class="chip" data-t="28" aria-pressed="true"><i style="background:var(--t28)"></i>레포츠</button> <button class="chip" data-t="39" aria-pressed="true"><i style="background:var(--t39)"></i>맛집</button></span>
 </div>
 <main>
   <div class="mapbox"><div id="map" role="application" aria-label="관광지 지도"></div><div class="note" id="note" hidden></div></div>
   <aside>
     <p class="cnt" id="cnt"></p>
     <div id="list"></div>
-    <div class="foot">한국관광공사 국문 관광정보(공공누리) · 위치·소개는 관광공사 자료 기준이에요 · 누르면 지도에서 보여 주고, 카카오맵으로 길찾기를 할 수 있어요</div>
+    <div class="foot">한국관광공사 국문 관광정보(공공누리) · 위치·소개는 관광공사 자료 기준이에요 · 맛집은 관광공사가 소개한 음식점이며 영업 여부는 바뀔 수 있어요 · 누르면 지도에서 보여 주고, 카카오맵으로 길찾기를 할 수 있어요</div>
   </aside>
 </main>
 <script src="config.js"></script>
@@ -79,8 +80,8 @@ aside{overflow-y:auto;border-left:1px solid var(--line);padding:14px 18px 28px}
 <script>
 (async()=>{
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const KEY=(window.VWORLD_KEY||'').trim(),TY={'12':'관광지','14':'문화시설','28':'레포츠'},COL={'12':'#257de0','14':'#f47230','28':'#00b894'};
-const MINZ=10,on=new Set(['12','14','28']);
+const KEY=(window.VWORLD_KEY||'').trim(),TY={'12':'관광지','14':'문화시설','28':'레포츠','39':'맛집'},COL={'12':'#257de0','14':'#f47230','28':'#00b894','39':'#f2a600'};
+const MINZ=10,on=new Set(['12','14','28','39']);
 const map=L.map('map',{zoomControl:true,attributionControl:true,minZoom:7,maxZoom:18}).setView([36.5759,128.5056],11);
 if(KEY)L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${KEY}/Base/{z}/{y}/{x}.png`,{maxZoom:19,attribution:'브이월드',referrerPolicy:'no-referrer',updateWhenIdle:true,keepBuffer:1}).addTo(map);
 map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('관광정보 한국관광공사');
@@ -109,7 +110,14 @@ async function load(){const z=map.getZoom(),my=++seq;
   items=rows.map(r=>({id:r[0],t:r[1],ty:r[2],x:r[3],y:r[4],img:r[5],a:r[6],o:r[7],hp:/^https?:\/\//.test(r[8]||'')?r[8]:''})).filter(r=>on.has(r.ty)&&b.contains([r.y,r.x])).sort((a,b)=>d2(a)-d2(b));
   layer.clearLayers();
   for(const k in mk)delete mk[k];
-  for(const r of items){const m=L.circleMarker([r.y,r.x],{radius:7,weight:2,color:'#fff',fillColor:COL[r.ty],fillOpacity:1}).bindPopup(()=>popHTML(r),{maxWidth:260});m.addTo(layer);mk[r.id]=m}
+  // 사진 있는 곳은 사진으로 : 화면을 52px 칸으로 나눠 칸마다 한 장만(가운데에서 가까운 곳), 나머지는 점
+  const photoZ=z>=12,taken=new Set(),showName=z>=14;
+  for(const r of items){let m;
+    if(photoZ&&r.img){const pt=map.latLngToContainerPoint([r.y,r.x]),cell=Math.floor(pt.x/52)+'_'+Math.floor(pt.y/52);
+      if(!taken.has(cell)&&taken.size<120){taken.add(cell);
+        m=L.marker([r.y,r.x],{icon:L.divIcon({className:'ph',iconSize:[46,46],iconAnchor:[23,23],html:`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="border-color:${COL[r.ty]}" onerror="this.parentNode.classList.add('nf')">${showName?`<span>${esc(r.t)}</span>`:''}`}),riseOnHover:true,zIndexOffset:1000})}}
+    if(!m)m=L.circleMarker([r.y,r.x],{radius:6,weight:2,color:'#fff',fillColor:COL[r.ty],fillOpacity:1});
+    m.bindPopup(()=>popHTML(r),{maxWidth:260,offset:m instanceof L.Marker?[0,-20]:[0,0]});m.addTo(layer);mk[r.id]=m}
   if(want&&mk[want]){mk[want].openPopup();want=null}
   $('cnt').textContent=items.length?`이 화면에 ${items.length.toLocaleString()}곳 · 지도 가운데에서 가까운 순`:'이 화면에는 관광지 자료가 없어요';
   $('list').innerHTML=items.slice(0,80).map(r=>`<div class="it" data-id="${esc(r.id)}">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ni'}))">`:'<span class="ni"></span>'}<span class="tt"><b>${esc(r.t)}</b><small><span class="dot" style="background:${COL[r.ty]}"></span>${TY[r.ty]||''} · ${esc(r.a)}</small>${r.o?`<span class="o">${esc(r.o)}</span>`:''}${r.hp?`<a class="hp" href="${esc(r.hp)}" target="_blank" rel="noopener">공식 홈페이지 →</a>`:''}</span></div>`).join('')+(items.length>80?`<p class="cnt">외 ${items.length-80}곳은 지도를 더 확대하면 보여요</p>`:'')}
